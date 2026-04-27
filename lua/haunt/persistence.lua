@@ -43,6 +43,8 @@ local custom_data_dir = nil
 local _git_info_cache = nil
 ---@type number
 local _cache_time = 0
+---@type string|nil
+local _cache_cwd = nil
 ---@type number
 local CACHE_TTL = 5000 -- 5 seconds in milliseconds
 
@@ -132,9 +134,10 @@ end
 ---   - branch: name of current branch, or nil if not in a git repo, detached HEAD, or no commits
 function M.get_git_info()
 	local now = vim.uv.hrtime() / 1e6 -- Convert to milliseconds
+	local cwd = vim.fn.getcwd()
 
 	-- Check if cache is valid
-	if _git_info_cache and (now - _cache_time) < CACHE_TTL then
+	if _git_info_cache and _cache_cwd == cwd and (now - _cache_time) < CACHE_TTL then
 		return _git_info_cache
 	end
 
@@ -147,6 +150,7 @@ function M.get_git_info()
 	-- Update cache
 	_git_info_cache = result
 	_cache_time = now
+	_cache_cwd = cwd
 
 	return result
 end
