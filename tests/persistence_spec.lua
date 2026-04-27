@@ -92,6 +92,46 @@ describe("haunt.persistence", function()
 		end)
 	end)
 
+	describe("lazy directory creation", function()
+		local temp_dir
+
+		before_each(function()
+			temp_dir = vim.fn.tempname() .. "_haunt_lazy/"
+			persistence.set_data_dir(temp_dir)
+		end)
+
+		after_each(function()
+			persistence.set_data_dir(nil)
+			helpers.cleanup_temp_dir(temp_dir)
+		end)
+
+		it("get_storage_path does not create the data dir", function()
+			assert.are.equal(0, vim.fn.isdirectory(temp_dir))
+			persistence.get_storage_path()
+			assert.are.equal(0, vim.fn.isdirectory(temp_dir))
+		end)
+
+		it("load_bookmarks does not create the data dir", function()
+			assert.are.equal(0, vim.fn.isdirectory(temp_dir))
+			local loaded = persistence.load_bookmarks()
+			assert.are.equal(0, #loaded)
+			assert.are.equal(0, vim.fn.isdirectory(temp_dir))
+		end)
+
+		it("save_bookmarks with empty list does not create the data dir", function()
+			assert.are.equal(0, vim.fn.isdirectory(temp_dir))
+			assert.is_true(persistence.save_bookmarks({}))
+			assert.are.equal(0, vim.fn.isdirectory(temp_dir))
+		end)
+
+		it("save_bookmarks with non-empty list creates the data dir", function()
+			assert.are.equal(0, vim.fn.isdirectory(temp_dir))
+			local bookmarks = { persistence.create_bookmark("/tmp/lazy.lua", 1, "Note") }
+			assert.is_true(persistence.save_bookmarks(bookmarks))
+			assert.are.equal(1, vim.fn.isdirectory(temp_dir))
+		end)
+	end)
+
 	describe("set_data_dir", function()
 		after_each(function()
 			persistence.set_data_dir(nil)
@@ -232,12 +272,24 @@ describe("haunt.persistence", function()
 			assert.are.equal(0, #loaded)
 		end)
 
-		it("handles empty bookmark list", function()
+		it("does not create a file for an empty bookmark list", function()
 			local save_ok = persistence.save_bookmarks({}, test_file)
 			assert.is_true(save_ok)
+			assert.are.equal(0, vim.fn.filereadable(test_file))
 
 			local loaded = persistence.load_bookmarks(test_file)
 			assert.are.equal(0, #loaded)
+		end)
+
+		it("deletes an existing file when saving an empty list", function()
+			local bookmarks = {
+				persistence.create_bookmark("/tmp/file1.lua", 10, "First"),
+			}
+			assert.is_true(persistence.save_bookmarks(bookmarks, test_file))
+			assert.are.equal(1, vim.fn.filereadable(test_file))
+
+			assert.is_true(persistence.save_bookmarks({}, test_file))
+			assert.are.equal(0, vim.fn.filereadable(test_file))
 		end)
 
 		it("handles large bookmark sets (100 bookmarks)", function()
