@@ -115,11 +115,16 @@ function M.set_data_dir(dir)
 	custom_data_dir = expanded
 end
 
+---@return string data_dir The haunt data directory path
+local function get_data_dir()
+	local config = require("haunt.config")
+	return custom_data_dir or config.DEFAULT_DATA_DIR
+end
+
 --- Ensures the haunt data directory exists
 ---@return string data_dir The haunt data directory path
 function M.ensure_data_dir()
-	local config = require("haunt.config")
-	local data_dir = custom_data_dir or config.DEFAULT_DATA_DIR
+	local data_dir = get_data_dir()
 	vim.fn.mkdir(data_dir, "p")
 	return data_dir
 end
@@ -159,7 +164,7 @@ end
 ---@return string path The full path to the storage file
 function M.get_storage_path()
 	local config = require("haunt.config").get()
-	local data_dir = M.ensure_data_dir()
+	local data_dir = get_data_dir()
 	local git_info = M.get_git_info()
 	local repo_root = git_info.root or vim.fn.getcwd()
 
@@ -192,6 +197,11 @@ function M.save_bookmarks(bookmarks, filepath)
 	if not storage_path then
 		vim.notify("haunt.nvim: save_bookmarks: could not determine storage path", vim.log.levels.ERROR)
 		return false
+	end
+
+	if #bookmarks == 0 then
+		vim.fn.delete(storage_path)
+		return true
 	end
 
 	-- Ensure storage directory exists
@@ -237,6 +247,14 @@ function M.save_bookmarks_async(bookmarks, filepath, callback)
 	if not storage_path then
 		if callback then
 			callback(false)
+		end
+		return
+	end
+
+	if #bookmarks == 0 then
+		vim.fn.delete(storage_path)
+		if callback then
+			callback(true)
 		end
 		return
 	end
