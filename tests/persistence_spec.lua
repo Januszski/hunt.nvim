@@ -28,6 +28,48 @@ describe("haunt.persistence", function()
 			local branch_type = type(git_info.branch)
 			assert.is_true(branch_type == "string" or branch_type == "nil")
 		end)
+
+		describe("cache invalidation on cwd change", function()
+			local original_cwd
+			local non_git_dir
+
+			before_each(function()
+				original_cwd = vim.fn.getcwd()
+				non_git_dir = helpers.create_temp_data_dir()
+			end)
+
+			after_each(function()
+				vim.fn.chdir(original_cwd)
+				helpers.cleanup_temp_dir(non_git_dir)
+			end)
+
+			it("re-fetches git info when cwd changes", function()
+				local primed = persistence.get_git_info()
+				assert.is_string(primed.root)
+
+				vim.fn.chdir(non_git_dir)
+
+				local fresh = persistence.get_git_info()
+				assert.is_nil(fresh.root)
+				assert.is_nil(fresh.branch)
+			end)
+
+			it("get_storage_path reflects fresh git info after cwd change", function()
+				local path_in_repo = persistence.get_storage_path()
+
+				vim.fn.chdir(non_git_dir)
+
+				local path_after_cd = persistence.get_storage_path()
+				assert.are_not.equal(path_in_repo, path_after_cd)
+			end)
+
+			it("returns cached info when cwd is unchanged", function()
+				local first = persistence.get_git_info()
+				local second = persistence.get_git_info()
+				assert.are.equal(first.root, second.root)
+				assert.are.equal(first.branch, second.branch)
+			end)
+		end)
 	end)
 
 	describe("get_storage_path", function()
