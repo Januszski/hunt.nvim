@@ -1,20 +1,25 @@
----@toc_entry Bookmark Structure
----@tag hunt-bookmark
----@tag Bookmark
+---@toc_entry Mark Structure
+---@tag hunt-mark
+---@tag Mark
 ---@text
---- # Bookmark Structure ~
+--- # Mark Structure ~
 ---
---- Bookmarks are stored as tables with the following fields:
+--- Marks are stored as tables with the following fields:
 
---- Bookmark data structure.
+--- Mark data structure.
 ---
---- Represents a single bookmark in hunt.nvim.
+--- Represents a single mark in hunt.nvim.
 ---
----@class Bookmark
----@field file string Absolute path to the bookmarked file
----@field line number 1-based line number of the bookmark
+---@class Mark
+---@field kind string "mark" | "finding" The kind of the marking
+---@field tag string|nil String used to tag marked section with a symbol
+---@field symbol string|nil Symbol derived from the tag
+---@field severity string "info" | "low" | "medium" | "high" | "critial" The kind of the marking
+---@field file string Absolute path to the marked file
+---@field line_start number 1-based line number of where the marked sections starts
+---@field line_end number 1-based line number of where the marked section ends
 ---@field note string|nil Optional annotation text displayed as virtual text
----@field id string Unique bookmark identifier (auto-generated)
+---@field id string Unique mark identifier (auto-generated)
 ---@field extmark_id number|nil Extmark ID for line tracking (internal)
 ---@field annotation_extmark_id number|nil Extmark ID for annotation display (internal)
 
@@ -23,11 +28,11 @@
 ---@field ensure_data_dir fun(): string|nil, string|nil
 ---@field get_git_info fun(): {root: string|nil, branch: string|nil}
 ---@field get_storage_path fun(): string|nil, string|nil
----@field save_bookmarks fun(bookmarks: Bookmark[], filepath?: string): boolean
----@field save_bookmarks_async fun(bookmarks: Bookmark[], filepath?: string, callback?: fun(success: boolean))
----@field load_bookmarks fun(filepath?: string): Bookmark[]|nil
----@field create_bookmark fun(file: string, line: number, note?: string): Bookmark|nil, string|nil
----@field is_valid_bookmark fun(bookmark: table): boolean
+---@field save_marks fun(marks: Mark[], filepath?: string): boolean
+---@field save_marks_async fun(marks: Mark[], filepath?: string, callback?: fun(success: boolean))
+---@field load_marks fun(filepath?: string): Mark[]|nil
+---@field create_mark fun(file: string, line: number, note?: string): Mark|nil, string|nil
+---@field is_valid_mark fun(mark: table): boolean
 
 ---@private
 ---@type PersistenceModule
@@ -65,7 +70,7 @@ local function get_git_root()
 	if exit_code == 127 and not _git_warning_shown then
 		_git_warning_shown = true
 		vim.notify(
-			"hunt.nvim: git command not found. Bookmarks will be stored per working directory instead of per repository/branch.",
+			"hunt.nvim: git command not found. Marks will be stored per working directory instead of per repository/branch.",
 			vim.log.levels.DEBUG
 		)
 	end
@@ -155,7 +160,7 @@ end
 --- Uses a 12-character SHA256 hash of "repo_root|branch" for the filename
 --- For detached HEAD states (e.g., tag checkouts), uses the short commit hash as identifier
 --- Falls back to CWD and "__default__" branch when not in a git repository
---- When per_branch_bookmarks is false, only uses repo_root for the hash (bookmarks shared across branches)
+--- When per_branch_marks is false, only uses repo_root for the hash (marks shared across branches)
 ---@return string path The full path to the storage file
 function M.get_storage_path()
 	local config = require("hunt.config").get()
@@ -163,8 +168,8 @@ function M.get_storage_path()
 	local git_info = M.get_git_info()
 	local repo_root = git_info.root or vim.fn.getcwd()
 
-	-- Skip branch scoping if per_branch_bookmarks is disabled
-	if not config.per_branch_bookmarks then
+	-- Skip branch scoping if per_branch_marks is disabled
+	if not config.per_branch_marks then
 		local hash = vim.fn.sha256(repo_root):sub(1, 12)
 		return data_dir .. hash .. ".json"
 	end
@@ -176,21 +181,21 @@ function M.get_storage_path()
 	return data_dir .. hash .. ".json"
 end
 
---- Save bookmarks to JSON file
----@param bookmarks table Array of bookmark tables to save
+--- Save marks to JSON file
+---@param marks table Array of marks tables to save
 ---@param filepath? string Optional custom file path (defaults to git-based path)
 ---@return boolean success True if save was successful, false otherwise
-function M.save_bookmarks(bookmarks, filepath)
+function M.save_marks(marks, filepath)
 	-- Validate input
-	if type(bookmarks) ~= "table" then
-		vim.notify("hunt.nvim: save_bookmarks: bookmarks must be a table", vim.log.levels.ERROR)
+	if type(marks) ~= "table" then
+		vim.notify("hunt.nvim: save_marks: marks must be a table", vim.log.levels.ERROR)
 		return false
 	end
 
 	-- Get storage path
 	local storage_path = filepath or M.get_storage_path()
 	if not storage_path then
-		vim.notify("hunt.nvim: save_bookmarks: could not determine storage path", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: save_marks: could not determine storage path", vim.log.levels.ERROR)
 		return false
 	end
 
@@ -200,33 +205,33 @@ function M.save_bookmarks(bookmarks, filepath)
 	-- Create data structure with version
 	local data = {
 		version = 1,
-		bookmarks = bookmarks,
+		marks = marks,
 	}
 
 	-- Encode to JSON
 	local ok, json_str = pcall(vim.json.encode, data)
 	if not ok then
-		vim.notify("hunt.nvim: save_bookmarks: JSON encoding failed: " .. tostring(json_str), vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: save_marks: JSON encoding failed: " .. tostring(json_str), vim.log.levels.ERROR)
 		return false
 	end
 
 	-- Write to file
 	local write_ok = pcall(vim.fn.writefile, { json_str }, storage_path)
 	if not write_ok then
-		vim.notify("hunt.nvim: save_bookmarks: failed to write file: " .. storage_path, vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: save_marks: failed to write file: " .. storage_path, vim.log.levels.ERROR)
 		return false
 	end
 
 	return true
 end
 
---- Save bookmarks to JSON file asynchronously using libuv
+--- Save marks to JSON file asynchronously using libuv
 --- Used for autosave scenarios where blocking I/O would cause UI lag
----@param bookmarks table Array of bookmark tables to save
+---@param marks table Array of mark tables to save
 ---@param filepath? string Optional custom file path (defaults to git-based path)
 ---@param callback? fun(success: boolean) Optional callback called when write completes
-function M.save_bookmarks_async(bookmarks, filepath, callback)
-	if type(bookmarks) ~= "table" then
+function M.save_marks_async(marks, filepath, callback)
+	if type(marks) ~= "table" then
 		if callback then
 			callback(false)
 		end
@@ -245,7 +250,7 @@ function M.save_bookmarks_async(bookmarks, filepath, callback)
 
 	local data = {
 		version = 1,
-		bookmarks = bookmarks,
+		marks = marks,
 	}
 
 	local ok, json_str = pcall(vim.json.encode, data)
@@ -279,14 +284,14 @@ function M.save_bookmarks_async(bookmarks, filepath, callback)
 	end)
 end
 
---- Load bookmarks from JSON file
+--- Load marks from JSON file
 ---@param filepath? string Optional custom file path (defaults to git-based path)
----@return table bookmarks Array of bookmarks, or empty table if file doesn't exist or on error
-function M.load_bookmarks(filepath)
+---@return table marks Array of marks, or empty table if file doesn't exist or on error
+function M.load_marks(filepath)
 	-- Get storage path
 	local storage_path = filepath or M.get_storage_path()
 	if not storage_path then
-		vim.notify("hunt.nvim: load_bookmarks: could not determine storage path", vim.log.levels.WARN)
+		vim.notify("hunt.nvim: load_marks: could not determine storage path", vim.log.levels.WARN)
 		return {}
 	end
 
@@ -299,7 +304,7 @@ function M.load_bookmarks(filepath)
 	-- Read file
 	local ok, lines = pcall(vim.fn.readfile, storage_path)
 	if not ok then
-		vim.notify("hunt.nvim: load_bookmarks: failed to read file: " .. storage_path, vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: load_marks: failed to read file: " .. storage_path, vim.log.levels.ERROR)
 		return {}
 	end
 
@@ -309,111 +314,214 @@ function M.load_bookmarks(filepath)
 	-- Decode JSON
 	local decode_ok, data = pcall(vim.json.decode, json_str)
 	if not decode_ok then
-		vim.notify("hunt.nvim: load_bookmarks: JSON decoding failed: " .. tostring(data), vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: load_marks: JSON decoding failed: " .. tostring(data), vim.log.levels.ERROR)
 		return {}
 	end
 
 	-- Validate structure
 	if type(data) ~= "table" then
-		vim.notify("hunt.nvim: load_bookmarks: invalid data structure (not a table)", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: load_marks: invalid data structure (not a table)", vim.log.levels.ERROR)
 		return {}
 	end
 
 	-- Validate version field
 	if not data.version then
-		vim.notify("hunt.nvim: load_bookmarks: missing version field", vim.log.levels.WARN)
+		vim.notify("hunt.nvim: load_marks: missing version field", vim.log.levels.WARN)
 		return {}
 	end
 
 	-- Check version compatibility
 	if data.version ~= 1 then
-		vim.notify("hunt.nvim: load_bookmarks: unsupported version: " .. tostring(data.version), vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: load_marks: unsupported version: " .. tostring(data.version), vim.log.levels.ERROR)
 		return {}
 	end
 
-	-- Validate bookmarks field
-	if type(data.bookmarks) ~= "table" then
-		vim.notify("hunt.nvim: load_bookmarks: invalid bookmarks field (not a table)", vim.log.levels.ERROR)
+	-- Validate marks field
+	if type(data.marks) ~= "table" then
+		vim.notify("hunt.nvim: load_marks: invalid marks field (not a table)", vim.log.levels.ERROR)
 		return {}
 	end
 
-	return data.bookmarks
+	return data.marks
 end
 
---- Generate a unique bookmark ID
+--- Generate a unique mark ID
 --- @param file string Absolute path to the file
---- @param line number 1-based line number
+--- @param line_start number 1-based line number
+--- @param line_end number 1-based line number
 --- @return string id A 16-character unique identifier
-local function generate_bookmark_id(file, line)
+local function generate_mark_id(file, line_start, line_end)
 	local timestamp = tostring(vim.uv.hrtime())
-	local id_key = file .. tostring(line) .. timestamp
+	local id_key = file .. tostring(line_start) .. tostring(line_end) .. timestamp
 	return vim.fn.sha256(id_key):sub(1, 16)
 end
 
---- Create a new bookmark. Does NOT save it!
---- @param file string Absolute path to the file
---- @param line number 1-based line number
---- @param note? string Optional annotation text
---- @return Bookmark|nil bookmark A new bookmark table, or nil if validation fails
---- @return string|nil error_msg Error message if validation fails
-function M.create_bookmark(file, line, note)
-	-- Validate inputs
+--- Create a new mark. Does NOT save it!
+---@param opts table Mark creation options
+---@field file string Absolute file path
+---@field line_start number 1-based line number
+---@field line_end number 1-based line number
+---@field kind? string Mark type ("mark", "finding", etc.)
+---@field severity? string Severity level ("info", "low", etc.)
+---@field note? string Optional annotation text
+---@field symbol_key? string Stable semantic key used for symbol hashing/grouping
+---@field symbol? string Display symbol associated with symbol_key
+---
+---@return Mark|nil mark The created mark table
+---@return string|nil error_msg Validation error if creation failed
+function M.create_mark(opts)
+	-- Validate opts
+	if type(opts) ~= "table" then
+		vim.notify("hunt.nvim: create_mark: opts must be a table", vim.log.levels.ERROR)
+		return nil, "opts must be a table"
+	end
+
+	local file = opts.file
+	local line_start = opts.line_start
+	local line_end = opts.line_end
+	local kind = opts.kind or "mark"
+	local severity = opts.severity
+	local note = opts.note
+	local symbol_key = opts.symbol_key
+	local symbol = opts.symbol
+
+	-- Validate file
 	if type(file) ~= "string" or file == "" then
-		vim.notify("hunt.nvim: create_bookmark: file must be a non-empty string", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: create_mark: file must be a non-empty string", vim.log.levels.ERROR)
 		return nil, "file must be a non-empty string"
 	end
 
-	if type(line) ~= "number" or line < 1 then
-		vim.notify("hunt.nvim: create_bookmark: line must be a positive number", vim.log.levels.ERROR)
-		return nil, "line must be a positive number"
+	-- Validate line
+	if type(line_start) ~= "number" or type(line_end) ~= "number" or line_start < 1 or line_end < 1 then
+		vim.notify("hunt.nvim: create_mark: lines must be a positive number", vim.log.levels.ERROR)
+		return nil, "lines must be a positive number"
 	end
 
+	-- Validate kind
+	if type(kind) ~= "string" or kind == "" then
+		vim.notify("hunt.nvim: create_mark: kind must be a non-empty string", vim.log.levels.ERROR)
+		return nil, "kind must be a non-empty string"
+	end
+
+	-- Validate severity
+	if type(severity) ~= nil and type(severity) ~= "string" or severity == "" then
+		vim.notify("hunt.nvim: create_mark: severity must be a non-empty string", vim.log.levels.ERROR)
+		return nil, "severity must be a non-empty string"
+	end
+
+	-- Validate note
 	if note ~= nil and type(note) ~= "string" then
-		vim.notify("hunt.nvim: create_bookmark: note must be nil or a string", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: create_mark: note must be nil or a string", vim.log.levels.ERROR)
 		return nil, "note must be nil or a string"
 	end
 
+	-- Validate symbol_key
+	if symbol_key ~= nil and type(symbol_key) ~= "string" then
+		vim.notify("hunt.nvim: create_mark: symbol_key must be nil or a string", vim.log.levels.ERROR)
+		return nil, "symbol_key must be nil or a string"
+	end
+
+	-- Validate symbol
+	if symbol ~= nil and type(symbol) ~= "string" then
+		vim.notify("hunt.nvim: create_mark: symbol must be nil or a string", vim.log.levels.ERROR)
+		return nil, "symbol must be nil or a string"
+	end
+
 	return {
+		id = generate_mark_id(file, line_start, line_end),
+
+		-- core location data
 		file = file,
-		line = line,
+		line_start = line_start,
+		line_end = line_end,
+
+		-- semantic type
+		kind = kind,
+
+		-- optional user annotation
 		note = note,
-		id = generate_bookmark_id(file, line),
-		extmark_id = nil, -- Will be set by display layer
+
+		-- Optional severity
+		severity = severity,
+
+		-- optional symbol-group metadata
+		symbol_key = symbol_key,
+		symbol = symbol,
+
+		-- runtime-only fields
+		extmark_id = nil,
+		annotation_extmark_id = nil,
 	}
 end
 
---- Validate a bookmark structure
---- @param bookmark any The value to validate
---- @return boolean valid True if the bookmark structure is valid
-function M.is_valid_bookmark(bookmark)
-	-- Check that bookmark is a table
-	if type(bookmark) ~= "table" then
+--- Validate a mark structure
+--- @param mark any The value to validate
+--- @return boolean valid True if the mark structure is valid
+function M.is_valid_mark(mark)
+	-- Must be a table
+	if type(mark) ~= "table" then
 		return false
 	end
 
-	-- required fields
-	if type(bookmark.file) ~= "string" or bookmark.file == "" then
+	-- Required: file
+	if type(mark.file) ~= "string" or mark.file == "" then
 		return false
 	end
 
-	if type(bookmark.line) ~= "number" or bookmark.line < 1 then
+	-- Required: line range
+	if
+		type(mark.line_start) ~= "number"
+		or type(mark.line_end) ~= "number"
+		or mark.line_start < 1
+		or mark.line_end < 1
+	then
 		return false
 	end
 
-	if type(bookmark.id) ~= "string" or bookmark.id == "" then
+	-- Optional sanity check:
+	-- end line should not be before start line
+	if mark.line_end < mark.line_start then
 		return false
 	end
 
-	-- optional fields (nil | right type)
-	if bookmark.note ~= nil and type(bookmark.note) ~= "string" then
+	-- Required: id
+	if type(mark.id) ~= "string" or mark.id == "" then
 		return false
 	end
 
-	if bookmark.extmark_id ~= nil and type(bookmark.extmark_id) ~= "number" then
+	-- Optional: kind
+	if mark.kind ~= nil and (type(mark.kind) ~= "string" or mark.kind == "") then
+		return false
+	end
+
+	-- Optional: severity
+	if mark.severity ~= nil and (type(mark.severity) ~= "string" or mark.severity == "") then
+		return false
+	end
+
+	-- Optional: note
+	if mark.note ~= nil and type(mark.note) ~= "string" then
+		return false
+	end
+
+	-- Optional: symbol_key
+	if mark.symbol_key ~= nil and type(mark.symbol_key) ~= "string" then
+		return false
+	end
+
+	-- Optional: symbol
+	if mark.symbol ~= nil and type(mark.symbol) ~= "string" then
+		return false
+	end
+
+	-- Runtime-only fields
+	if mark.extmark_id ~= nil and type(mark.extmark_id) ~= "number" then
+		return false
+	end
+
+	if mark.annotation_extmark_id ~= nil and type(mark.annotation_extmark_id) ~= "number" then
 		return false
 	end
 
 	return true
 end
-
-return M
