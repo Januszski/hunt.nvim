@@ -1,5 +1,5 @@
 ---@toc_entry Picker Utilities
----@tag haunt-picker-utils
+---@tag hunt-picker-utils
 ---@text
 --- # Picker Utilities ~
 ---
@@ -9,7 +9,7 @@
 ---@class PickerUtils
 ---@field ensure_modules fun()
 ---@field get_api fun(): ApiModule
----@field get_haunt fun(): HauntModule
+---@field get_hunt fun(): HuntModule
 ---@field with_buffer_context fun(bufnr: number, line: number, callback: function): any
 ---@field build_picker_items fun(bookmarks: Bookmark[]): PickerItem[]
 ---@field jump_to_bookmark fun(item: PickerItem)
@@ -23,16 +23,16 @@ local M = {}
 ---@type ApiModule|nil
 local api = nil
 ---@private
----@type HauntModule|nil
-local haunt = nil
+---@type HuntModule|nil
+local hunt = nil
 
 ---@private
 function M.ensure_modules()
 	if not api then
-		api = require("haunt.api")
+		api = require("hunt.api")
 	end
-	if not haunt then
-		haunt = require("haunt")
+	if not hunt then
+		hunt = require("hunt")
 	end
 end
 
@@ -44,12 +44,12 @@ function M.get_api()
 	return api
 end
 
---- Get the haunt module
----@return HauntModule
-function M.get_haunt()
+--- Get the hunt module
+---@return HuntModule
+function M.get_hunt()
 	M.ensure_modules()
-	---@cast haunt -nil
-	return haunt
+	---@cast hunt -nil
+	return hunt
 end
 
 --- Execute a callback with buffer context temporarily switched

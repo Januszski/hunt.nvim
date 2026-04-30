@@ -10,8 +10,8 @@ describe("haunt.sidekick", function()
 
 	before_each(function()
 		helpers.reset_modules()
-		sidekick = require("haunt.sidekick")
-		api = require("haunt.api")
+		sidekick = require("hunt.sidekick")
+		api = require("hunt.api")
 		cwd = vim.fn.getcwd()
 	end)
 

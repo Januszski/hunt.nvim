@@ -13,14 +13,14 @@ describe("haunt.restoration", function()
 		helpers.reset_modules()
 
 		-- Setup real modules (integration style)
-		local config = require("haunt.config")
+		local config = require("hunt.config")
 		config.setup()
 
-		store = require("haunt.store")
+		store = require("hunt.store")
 		store._reset_for_testing()
 
-		display = require("haunt.display")
-		restoration = require("haunt.restoration")
+		display = require("hunt.display")
+		restoration = require("hunt.restoration")
 	end)
 
 	after_each(function()

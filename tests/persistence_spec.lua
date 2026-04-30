@@ -8,7 +8,7 @@ describe("haunt.persistence", function()
 
 	before_each(function()
 		helpers.reset_modules()
-		persistence = require("haunt.persistence")
+		persistence = require("hunt.persistence")
 	end)
 
 	describe("get_git_info", function()
@@ -54,7 +54,7 @@ describe("haunt.persistence", function()
 			local config
 
 			before_each(function()
-				config = require("haunt.config")
+				config = require("hunt.config")
 			end)
 
 			it("uses different paths when per_branch_bookmarks is true vs false", function()
@@ -62,8 +62,8 @@ describe("haunt.persistence", function()
 				local path_with_branch = persistence.get_storage_path()
 
 				helpers.reset_modules()
-				persistence = require("haunt.persistence")
-				config = require("haunt.config")
+				persistence = require("hunt.persistence")
+				config = require("hunt.config")
 
 				config.setup({ per_branch_bookmarks = false })
 				local path_without_branch = persistence.get_storage_path()
@@ -128,7 +128,7 @@ describe("haunt.persistence", function()
 		end)
 
 		it("resets to default when passed nil", function()
-			local config = require("haunt.config")
+			local config = require("hunt.config")
 			local temp_dir = vim.fn.tempname() .. "_haunt_test/"
 			persistence.set_data_dir(temp_dir)
 

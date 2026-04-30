@@ -14,7 +14,7 @@ describe("change_data_dir", function()
 			mock_persistence = helpers.create_mock_persistence()
 			package.loaded["haunt.persistence"] = mock_persistence
 
-			store = require("haunt.store")
+			store = require("hunt.store")
 			store._reset_for_testing()
 		end)
 
@@ -94,14 +94,14 @@ describe("change_data_dir", function()
 		before_each(function()
 			helpers.reset_modules()
 
-			local config = require("haunt.config")
+			local config = require("hunt.config")
 			config.setup()
 
-			store = require("haunt.store")
+			store = require("hunt.store")
 			store._reset_for_testing()
 
-			display = require("haunt.display")
-			restoration = require("haunt.restoration")
+			display = require("hunt.display")
+			restoration = require("hunt.restoration")
 		end)
 
 		after_each(function()
@@ -172,15 +172,15 @@ describe("change_data_dir", function()
 		before_each(function()
 			helpers.reset_modules()
 
-			config = require("haunt.config")
+			config = require("hunt.config")
 			config.setup()
 
-			api = require("haunt.api")
+			api = require("hunt.api")
 			api._reset_for_testing()
 
-			store = require("haunt.store")
-			display = require("haunt.display")
-			persistence = require("haunt.persistence")
+			store = require("hunt.store")
+			display = require("hunt.display")
+			persistence = require("hunt.persistence")
 
 			data_dir_1 = helpers.create_temp_data_dir()
 			data_dir_2 = helpers.create_temp_data_dir()

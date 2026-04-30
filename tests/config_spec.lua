@@ -8,7 +8,7 @@ describe("haunt.config", function()
 
 	before_each(function()
 		helpers.reset_modules()
-		config = require("haunt.config")
+		config = require("hunt.config")
 	end)
 
 	describe("default configuration", function()

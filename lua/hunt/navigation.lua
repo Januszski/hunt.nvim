@@ -6,7 +6,7 @@
 ---@diagnostic disable-next-line: missing-fields
 local M = {}
 
-local utils = require("haunt.utils")
+local utils = require("hunt.utils")
 
 ---@private
 ---@type StoreModule|nil
@@ -15,7 +15,7 @@ local store = nil
 ---@private
 local function ensure_store()
 	if not store then
-		store = require("haunt.store")
+		store = require("hunt.store")
 	end
 end
 
@@ -30,7 +30,7 @@ local function navigate_bookmark(direction)
 	local filepath = utils.normalize_filepath(vim.api.nvim_buf_get_name(bufnr))
 
 	if filepath == "" then
-		vim.notify("haunt.nvim: Cannot navigate bookmarks in unnamed buffer", vim.log.levels.WARN)
+		vim.notify("hunt.nvim: Cannot navigate bookmarks in unnamed buffer", vim.log.levels.WARN)
 		return false
 	end
 
@@ -40,7 +40,7 @@ local function navigate_bookmark(direction)
 	local file_bookmarks = store.get_sorted_bookmarks_for_file(filepath)
 
 	if #file_bookmarks == 0 then
-		vim.notify("haunt.nvim: No bookmarks in current buffer", vim.log.levels.INFO)
+		vim.notify("hunt.nvim: No bookmarks in current buffer", vim.log.levels.INFO)
 		return false
 	end
 
@@ -52,7 +52,7 @@ local function navigate_bookmark(direction)
 	end
 
 	if #file_bookmarks == 1 then
-		vim.notify("haunt.nvim: Only one bookmark in current buffer", vim.log.levels.INFO)
+		vim.notify("hunt.nvim: Only one bookmark in current buffer", vim.log.levels.INFO)
 		jump_to(file_bookmarks[1].line)
 		return true
 	end

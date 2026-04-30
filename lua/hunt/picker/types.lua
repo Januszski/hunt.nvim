@@ -1,5 +1,5 @@
 ---@toc_entry Picker Types
----@tag haunt-picker-types
+---@tag hunt-picker-types
 ---@text
 --- # Picker Types ~
 ---

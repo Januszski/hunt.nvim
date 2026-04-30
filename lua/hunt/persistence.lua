@@ -1,5 +1,5 @@
 ---@toc_entry Bookmark Structure
----@tag haunt-bookmark
+---@tag hunt-bookmark
 ---@tag Bookmark
 ---@text
 --- # Bookmark Structure ~
@@ -8,7 +8,7 @@
 
 --- Bookmark data structure.
 ---
---- Represents a single bookmark in haunt.nvim.
+--- Represents a single bookmark in hunt.nvim.
 ---
 ---@class Bookmark
 ---@field file string Absolute path to the bookmarked file
@@ -65,7 +65,7 @@ local function get_git_root()
 	if exit_code == 127 and not _git_warning_shown then
 		_git_warning_shown = true
 		vim.notify(
-			"haunt.nvim: git command not found. Bookmarks will be stored per working directory instead of per repository/branch.",
+			"hunt.nvim: git command not found. Bookmarks will be stored per working directory instead of per repository/branch.",
 			vim.log.levels.DEBUG
 		)
 	end
@@ -115,10 +115,10 @@ function M.set_data_dir(dir)
 	custom_data_dir = expanded
 end
 
---- Ensures the haunt data directory exists
----@return string data_dir The haunt data directory path
+--- Ensures the hunt data directory exists
+---@return string data_dir The hunt data directory path
 function M.ensure_data_dir()
-	local config = require("haunt.config")
+	local config = require("hunt.config")
 	local data_dir = custom_data_dir or config.DEFAULT_DATA_DIR
 	vim.fn.mkdir(data_dir, "p")
 	return data_dir
@@ -158,7 +158,7 @@ end
 --- When per_branch_bookmarks is false, only uses repo_root for the hash (bookmarks shared across branches)
 ---@return string path The full path to the storage file
 function M.get_storage_path()
-	local config = require("haunt.config").get()
+	local config = require("hunt.config").get()
 	local data_dir = M.ensure_data_dir()
 	local git_info = M.get_git_info()
 	local repo_root = git_info.root or vim.fn.getcwd()
@@ -183,14 +183,14 @@ end
 function M.save_bookmarks(bookmarks, filepath)
 	-- Validate input
 	if type(bookmarks) ~= "table" then
-		vim.notify("haunt.nvim: save_bookmarks: bookmarks must be a table", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: save_bookmarks: bookmarks must be a table", vim.log.levels.ERROR)
 		return false
 	end
 
 	-- Get storage path
 	local storage_path = filepath or M.get_storage_path()
 	if not storage_path then
-		vim.notify("haunt.nvim: save_bookmarks: could not determine storage path", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: save_bookmarks: could not determine storage path", vim.log.levels.ERROR)
 		return false
 	end
 
@@ -206,14 +206,14 @@ function M.save_bookmarks(bookmarks, filepath)
 	-- Encode to JSON
 	local ok, json_str = pcall(vim.json.encode, data)
 	if not ok then
-		vim.notify("haunt.nvim: save_bookmarks: JSON encoding failed: " .. tostring(json_str), vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: save_bookmarks: JSON encoding failed: " .. tostring(json_str), vim.log.levels.ERROR)
 		return false
 	end
 
 	-- Write to file
 	local write_ok = pcall(vim.fn.writefile, { json_str }, storage_path)
 	if not write_ok then
-		vim.notify("haunt.nvim: save_bookmarks: failed to write file: " .. storage_path, vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: save_bookmarks: failed to write file: " .. storage_path, vim.log.levels.ERROR)
 		return false
 	end
 
@@ -286,7 +286,7 @@ function M.load_bookmarks(filepath)
 	-- Get storage path
 	local storage_path = filepath or M.get_storage_path()
 	if not storage_path then
-		vim.notify("haunt.nvim: load_bookmarks: could not determine storage path", vim.log.levels.WARN)
+		vim.notify("hunt.nvim: load_bookmarks: could not determine storage path", vim.log.levels.WARN)
 		return {}
 	end
 
@@ -299,7 +299,7 @@ function M.load_bookmarks(filepath)
 	-- Read file
 	local ok, lines = pcall(vim.fn.readfile, storage_path)
 	if not ok then
-		vim.notify("haunt.nvim: load_bookmarks: failed to read file: " .. storage_path, vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: load_bookmarks: failed to read file: " .. storage_path, vim.log.levels.ERROR)
 		return {}
 	end
 
@@ -309,31 +309,31 @@ function M.load_bookmarks(filepath)
 	-- Decode JSON
 	local decode_ok, data = pcall(vim.json.decode, json_str)
 	if not decode_ok then
-		vim.notify("haunt.nvim: load_bookmarks: JSON decoding failed: " .. tostring(data), vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: load_bookmarks: JSON decoding failed: " .. tostring(data), vim.log.levels.ERROR)
 		return {}
 	end
 
 	-- Validate structure
 	if type(data) ~= "table" then
-		vim.notify("haunt.nvim: load_bookmarks: invalid data structure (not a table)", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: load_bookmarks: invalid data structure (not a table)", vim.log.levels.ERROR)
 		return {}
 	end
 
 	-- Validate version field
 	if not data.version then
-		vim.notify("haunt.nvim: load_bookmarks: missing version field", vim.log.levels.WARN)
+		vim.notify("hunt.nvim: load_bookmarks: missing version field", vim.log.levels.WARN)
 		return {}
 	end
 
 	-- Check version compatibility
 	if data.version ~= 1 then
-		vim.notify("haunt.nvim: load_bookmarks: unsupported version: " .. tostring(data.version), vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: load_bookmarks: unsupported version: " .. tostring(data.version), vim.log.levels.ERROR)
 		return {}
 	end
 
 	-- Validate bookmarks field
 	if type(data.bookmarks) ~= "table" then
-		vim.notify("haunt.nvim: load_bookmarks: invalid bookmarks field (not a table)", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: load_bookmarks: invalid bookmarks field (not a table)", vim.log.levels.ERROR)
 		return {}
 	end
 
@@ -359,17 +359,17 @@ end
 function M.create_bookmark(file, line, note)
 	-- Validate inputs
 	if type(file) ~= "string" or file == "" then
-		vim.notify("haunt.nvim: create_bookmark: file must be a non-empty string", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: create_bookmark: file must be a non-empty string", vim.log.levels.ERROR)
 		return nil, "file must be a non-empty string"
 	end
 
 	if type(line) ~= "number" or line < 1 then
-		vim.notify("haunt.nvim: create_bookmark: line must be a positive number", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: create_bookmark: line must be a positive number", vim.log.levels.ERROR)
 		return nil, "line must be a positive number"
 	end
 
 	if note ~= nil and type(note) ~= "string" then
-		vim.notify("haunt.nvim: create_bookmark: note must be nil or a string", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: create_bookmark: note must be nil or a string", vim.log.levels.ERROR)
 		return nil, "note must be nil or a string"
 	end
 

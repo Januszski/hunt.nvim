@@ -83,9 +83,9 @@ describe("haunt.picker", function()
 		end
 
 		-- Initialize modules
-		haunt = require("haunt")
+		haunt = require("plugin.hunt")
 		haunt.setup()
-		api = require("haunt.api")
+		api = require("hunt.api")
 		api._reset_for_testing()
 	end)
 
@@ -118,7 +118,7 @@ describe("haunt.picker", function()
 		it("uses snacks when picker is set to 'snacks'", function()
 			package.loaded["snacks"] = mock_snacks
 			haunt.setup({ picker = "snacks" })
-			picker = require("haunt.picker")
+			picker = require("hunt.picker.init")
 
 			picker.show()
 
@@ -127,7 +127,7 @@ describe("haunt.picker", function()
 
 		it("warns when snacks is not available and picker is 'snacks'", function()
 			haunt.setup({ picker = "snacks" })
-			picker = require("haunt.picker")
+			picker = require("hunt.picker.init")
 
 			picker.show()
 
@@ -143,7 +143,7 @@ describe("haunt.picker", function()
 
 		it("warns when telescope is not available and picker is 'telescope'", function()
 			haunt.setup({ picker = "telescope" })
-			picker = require("haunt.picker")
+			picker = require("hunt.picker.init")
 
 			picker.show()
 
@@ -159,7 +159,7 @@ describe("haunt.picker", function()
 
 		it("warns when fzf-lua is not available and picker is 'fzf'", function()
 			haunt.setup({ picker = "fzf" })
-			picker = require("haunt.picker")
+			picker = require("hunt.picker.init")
 
 			picker.show()
 
@@ -177,7 +177,7 @@ describe("haunt.picker", function()
 			mock_fzf = create_mock_fzf()
 			package.loaded["fzf-lua"] = mock_fzf
 			haunt.setup({ picker = "fzf" })
-			picker = require("haunt.picker")
+			picker = require("hunt.picker.init")
 
 			picker.show()
 
@@ -188,7 +188,7 @@ describe("haunt.picker", function()
 			mock_fzf = create_mock_fzf()
 			package.loaded["fzf-lua"] = mock_fzf
 			haunt.setup({ picker = "auto" })
-			picker = require("haunt.picker")
+			picker = require("hunt.picker.init")
 
 			picker.show()
 
@@ -198,7 +198,7 @@ describe("haunt.picker", function()
 
 		it("falls back to vim.ui.select in auto mode when no picker available", function()
 			haunt.setup({ picker = "auto" })
-			picker = require("haunt.picker")
+			picker = require("hunt.picker.init")
 
 			picker.show()
 
@@ -208,7 +208,7 @@ describe("haunt.picker", function()
 		it("uses snacks first in auto mode when available", function()
 			package.loaded["snacks"] = mock_snacks
 			haunt.setup({ picker = "auto" })
-			picker = require("haunt.picker")
+			picker = require("hunt.picker.init")
 
 			picker.show()
 
@@ -230,7 +230,7 @@ describe("haunt.picker", function()
 
 		it("notifies when no bookmarks exist (via snacks)", function()
 			package.loaded["snacks"] = mock_snacks
-			picker = require("haunt.picker")
+			picker = require("hunt.picker.init")
 
 			picker.show()
 
@@ -240,7 +240,7 @@ describe("haunt.picker", function()
 		end)
 
 		it("notifies when no bookmarks exist (via fallback)", function()
-			picker = require("haunt.picker")
+			picker = require("hunt.picker.init")
 
 			picker.show()
 
@@ -250,7 +250,7 @@ describe("haunt.picker", function()
 
 		it("calls Snacks.picker when bookmarks exist", function()
 			package.loaded["snacks"] = mock_snacks
-			picker = require("haunt.picker")
+			picker = require("hunt.picker.init")
 
 			vim.api.nvim_win_set_cursor(0, { 1, 0 })
 			api.annotate("Test bookmark")
@@ -262,7 +262,7 @@ describe("haunt.picker", function()
 		end)
 
 		it("falls back to vim.ui.select when Snacks is not available", function()
-			picker = require("haunt.picker")
+			picker = require("hunt.picker.init")
 
 			vim.api.nvim_win_set_cursor(0, { 1, 0 })
 			api.annotate("Test")
@@ -275,7 +275,7 @@ describe("haunt.picker", function()
 
 		it("passes opts to underlying picker", function()
 			package.loaded["snacks"] = mock_snacks
-			picker = require("haunt.picker")
+			picker = require("hunt.picker.init")
 
 			vim.api.nvim_win_set_cursor(0, { 1, 0 })
 			api.annotate("Test")

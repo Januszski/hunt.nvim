@@ -1,9 +1,9 @@
 ---@toc_entry Picker fzf-lua
----@tag haunt-picker-fzf
+---@tag hunt-picker-fzf
 ---@text
 --- # Picker fzf-lua ~
 ---
---- fzf-lua picker implementation for haunt.nvim.
+--- fzf-lua picker implementation for hunt.nvim.
 --- Requires fzf-lua (https://github.com/ibhagwan/fzf-lua) to be installed.
 ---
 --- Picker actions: ~
@@ -11,13 +11,13 @@
 ---   - `d` (normal mode): Delete the selected bookmark
 ---   - `a` (normal mode): Edit the bookmark's annotation
 ---
---- The keybindings can be customized via |HauntConfig|.picker_keys.
+--- The keybindings can be customized via |HuntConfig|.picker_keys.
 
 ---@type PickerModule
 ---@diagnostic disable-next-line: missing-fields
 local M = {}
 
-local utils = require("haunt.picker.utils")
+local utils = require("hunt.picker.utils")
 
 ---@private
 ---@type PickerRouter|nil
@@ -49,13 +49,13 @@ local function handle_delete(item, reopen_fn)
 	local success = api.delete_by_id(item.id)
 
 	if not success then
-		vim.notify("haunt.nvim: Failed to delete bookmark", vim.log.levels.WARN)
+		vim.notify("hunt.nvim: Failed to delete bookmark", vim.log.levels.WARN)
 		return
 	end
 
 	local remaining = api.get_bookmarks()
 	if #remaining == 0 then
-		vim.notify("haunt.nvim: No bookmarks remaining", vim.log.levels.INFO)
+		vim.notify("hunt.nvim: No bookmarks remaining", vim.log.levels.INFO)
 		return
 	end
 
@@ -88,15 +88,15 @@ function M.show(opts)
 	end
 
 	local api = utils.get_api()
-	local haunt = utils.get_haunt()
+	local hunt = utils.get_hunt()
 
 	local bookmarks = api.get_bookmarks()
 	if #bookmarks == 0 then
-		vim.notify("haunt.nvim: No bookmarks found", vim.log.levels.INFO)
+		vim.notify("hunt.nvim: No bookmarks found", vim.log.levels.INFO)
 		return true
 	end
 
-	local cfg = haunt.get_config()
+	local cfg = hunt.get_config()
 	local picker_keys = cfg.picker_keys
 
 	local items = utils.build_picker_items(bookmarks)
@@ -162,7 +162,7 @@ function M.show(opts)
 	end
 
 	local fzf_opts = {
-		prompt = "Hauntings> ",
+		prompt = "Huntings> ",
 		previewer = "builtin",
 		actions = actions,
 	}

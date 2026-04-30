@@ -14,7 +14,7 @@ describe("haunt.store", function()
 		mock_persistence = helpers.create_mock_persistence()
 		package.loaded["haunt.persistence"] = mock_persistence
 
-		store = require("haunt.store")
+		store = require("hunt.store")
 		store._reset_for_testing()
 	end)
 
@@ -343,7 +343,7 @@ describe("haunt.store", function()
 			-- Reset to clear loaded state
 			helpers.reset_modules()
 			package.loaded["haunt.persistence"] = mock_persistence
-			store = require("haunt.store")
+			store = require("hunt.store")
 
 			local success = store.load()
 
@@ -360,7 +360,7 @@ describe("haunt.store", function()
 
 			helpers.reset_modules()
 			package.loaded["haunt.persistence"] = mock_persistence
-			store = require("haunt.store")
+			store = require("hunt.store")
 			store.load()
 
 			local sorted = store.get_sorted_bookmarks_for_file("/test.lua")
@@ -376,7 +376,7 @@ describe("haunt.store", function()
 
 			helpers.reset_modules()
 			package.loaded["haunt.persistence"] = mock_persistence
-			store = require("haunt.store")
+			store = require("hunt.store")
 
 			store.load()
 			store.load()

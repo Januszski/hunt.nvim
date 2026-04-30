@@ -31,7 +31,7 @@ local M = {}
 ---@field col integer
 ---@field text string
 
-local utils = require("haunt.utils")
+local utils = require("hunt.utils")
 
 ---@private
 ---@type Bookmark[]
@@ -52,7 +52,7 @@ local persistence = nil
 ---@private
 local function ensure_persistence()
 	if not persistence then
-		persistence = require("haunt.persistence")
+		persistence = require("hunt.persistence")
 	end
 end
 
@@ -234,7 +234,7 @@ function M.get_quickfix_items(opts)
 
 	local items = {}
 	for _, bookmark in ipairs(active_bookmarks) do
-		local text = "Haunt bookmark"
+		local text = "Hunt bookmark"
 		if append_annotations and bookmark.note and bookmark.note ~= "" then
 			text = bookmark.note
 		end

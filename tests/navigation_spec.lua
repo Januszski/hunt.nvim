@@ -10,9 +10,9 @@ describe("haunt.navigation", function()
 
 	before_each(function()
 		helpers.reset_modules()
-		store = require("haunt.store")
+		store = require("hunt.store")
 		store._reset_for_testing()
-		navigation = require("haunt.navigation")
+		navigation = require("hunt.navigation")
 	end)
 
 	after_each(function()

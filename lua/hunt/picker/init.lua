@@ -1,5 +1,5 @@
 ---@toc_entry Picker
----@tag haunt-picker
+---@tag hunt-picker
 ---@text
 --- # Picker ~
 ---
@@ -9,7 +9,7 @@
 --- fzf-lua (https://github.com/ibhagwan/fzf-lua).
 --- Falls back to vim.ui.select for basic functionality if none are available.
 ---
---- Configure which picker to use via |HauntConfig|.picker:
+--- Configure which picker to use via |HuntConfig|.picker:
 ---   - `"auto"` (default): Try Snacks, Telescope, fzf-lua, then vim.ui.select
 ---   - `"snacks"`: Use Snacks.nvim picker
 ---   - `"telescope"`: Use Telescope.nvim picker
@@ -20,20 +20,20 @@
 ---   - `d` (normal mode): Delete the selected bookmark
 ---   - `a` (normal mode): Edit the bookmark's annotation
 ---
---- The keybindings can be customized via |HauntConfig|.picker_keys.
+--- The keybindings can be customized via |HuntConfig|.picker_keys.
 
 ---@type PickerRouter
 ---@diagnostic disable-next-line: missing-fields
 local M = {}
 
 ---@private
----@type HauntModule|nil
-local haunt = nil
+---@type HuntModule|nil
+local hunt = nil
 
 ---@private
 local function ensure_modules()
-	if not haunt then
-		haunt = require("haunt")
+	if not hunt then
+		hunt = require("hunt")
 	end
 end
 
@@ -48,7 +48,7 @@ local function lazy_picker(name)
 	return setmetatable({}, {
 		__index = function(_, key)
 			if not picker then
-				picker = require("haunt.picker." .. name)
+				picker = require("hunt.picker." .. name)
 				picker.set_picker_module(M)
 			end
 			return picker[key]
@@ -82,7 +82,7 @@ end
 --- Open the bookmark picker.
 ---
 --- Displays all bookmarks in an interactive picker. The picker used depends
---- on the |HauntConfig|.picker setting:
+--- on the |HuntConfig|.picker setting:
 ---   - `"auto"` (default): Try Snacks, Telescope, fzf-lua, then vim.ui.select
 ---   - `"snacks"`: Use Snacks.nvim picker
 ---   - `"telescope"`: Use Telescope.nvim picker
@@ -98,37 +98,37 @@ end
 --- >lua
 ---   ---@type snacks.picker.Config
 ---   local opts = { ... }
----   require('haunt.picker').show(opts)
+---   require('hunt.picker').show(opts)
 --- <
 ---
 ---@usage >lua
 ---   -- Show the picker
----   require('haunt.picker').show()
+---   require('hunt.picker').show()
 ---<
 ---@param opts? table Options passed to the underlying picker
 function M.show(opts)
 	ensure_modules()
-	---@cast haunt -nil
+	---@cast hunt -nil
 
-	local picker_type = haunt.get_config().picker or "auto"
+	local picker_type = hunt.get_config().picker or "auto"
 
 	if picker_type == "snacks" then
 		if not snacks.show(opts) then
-			vim.notify("haunt.nvim: Snacks.nvim is not available", vim.log.levels.WARN)
+			vim.notify("hunt.nvim: Snacks.nvim is not available", vim.log.levels.WARN)
 		end
 		return
 	end
 
 	if picker_type == "telescope" then
 		if not telescope.show(opts) then
-			vim.notify("haunt.nvim: Telescope.nvim is not available", vim.log.levels.WARN)
+			vim.notify("hunt.nvim: Telescope.nvim is not available", vim.log.levels.WARN)
 		end
 		return
 	end
 
 	if picker_type == "fzf" then
 		if not fzf.show(opts) then
-			vim.notify("haunt.nvim: fzf-lua is not available", vim.log.levels.WARN)
+			vim.notify("hunt.nvim: fzf-lua is not available", vim.log.levels.WARN)
 		end
 		return
 	end

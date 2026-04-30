@@ -55,21 +55,21 @@ end
 ---@return table modules Table with api, store, display, config, etc.
 function M.setup_haunt()
 	M.reset_modules()
-	local haunt = require("haunt")
+	local haunt = require("plugin.hunt")
 	haunt.setup()
-	local api = require("haunt.api")
+	local api = require("hunt.api")
 	api._reset_for_testing()
 
 	return {
 		haunt = haunt,
 		api = api,
-		store = require("haunt.store"),
-		display = require("haunt.display"),
-		config = require("haunt.config"),
-		utils = require("haunt.utils"),
-		navigation = require("haunt.navigation"),
-		restoration = require("haunt.restoration"),
-		persistence = require("haunt.persistence"),
+		store = require("hunt.store"),
+		display = require("hunt.display"),
+		config = require("hunt.config"),
+		utils = require("hunt.utils"),
+		navigation = require("hunt.navigation"),
+		restoration = require("hunt.restoration"),
+		persistence = require("hunt.persistence"),
 	}
 end
 
@@ -133,7 +133,7 @@ function M.create_mock_display()
 	end
 
 	function mock.get_config()
-		return require("haunt.config").get()
+		return require("hunt.config").get()
 	end
 
 	function mock.is_initialized()

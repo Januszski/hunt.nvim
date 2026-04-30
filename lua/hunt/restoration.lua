@@ -7,7 +7,7 @@
 ---@diagnostic disable-next-line: missing-fields
 local M = {}
 
-local utils = require("haunt.utils")
+local utils = require("hunt.utils")
 
 ---@private
 ---@type table<number, boolean>
@@ -23,10 +23,10 @@ local display = nil
 ---@private
 local function ensure_modules()
 	if not store then
-		store = require("haunt.store")
+		store = require("hunt.store")
 	end
 	if not display then
-		display = require("haunt.display")
+		display = require("hunt.display")
 	end
 end
 
@@ -85,7 +85,7 @@ function M.restore_buffer_bookmarks(bufnr, annotations_visible)
 	---@cast store -nil
 	---@cast display -nil
 
-	require("haunt")._ensure_initialized()
+	require("hunt")._ensure_initialized()
 
 	local valid, _ = utils.validate_buffer_for_bookmarks(bufnr)
 	if not valid then
@@ -138,7 +138,7 @@ function M.restore_buffer_bookmarks(bufnr, annotations_visible)
 
 		-- Log at DEBUG level - this is expected in race conditions
 		vim.notify(
-			string.format("haunt.nvim: Failed to restore bookmark in %s: %s", bookmark.file, tostring(err)),
+			string.format("hunt.nvim: Failed to restore bookmark in %s: %s", bookmark.file, tostring(err)),
 			vim.log.levels.DEBUG
 		)
 		success = false

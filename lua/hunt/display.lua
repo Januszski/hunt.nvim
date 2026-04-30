@@ -32,13 +32,13 @@ local function is_valid_buffer(bufnr)
 	return type(bufnr) == "number" and vim.api.nvim_buf_is_valid(bufnr)
 end
 
---- Define custom highlight groups for haunt
---- Creates HauntAnnotation highlight group with sensible defaults
+--- Define custom highlight groups for hunt
+--- Creates HuntAnnotation highlight group with sensible defaults
 --- Users can override this by defining the highlight group themselves
 local function define_highlights()
-	local existing = vim.api.nvim_get_hl(0, { name = "HauntAnnotation" })
+	local existing = vim.api.nvim_get_hl(0, { name = "HuntAnnotation" })
 	if vim.tbl_isempty(existing) then
-		vim.api.nvim_set_hl(0, "HauntAnnotation", { link = "DiagnosticVirtualTextHint" })
+		vim.api.nvim_set_hl(0, "HuntAnnotation", { link = "DiagnosticVirtualTextHint" })
 	end
 end
 
@@ -51,22 +51,22 @@ local function ensure_highlights_defined()
 	define_highlights()
 
 	vim.api.nvim_create_autocmd("ColorScheme", {
-		group = vim.api.nvim_create_augroup("haunt_highlights", { clear = true }),
+		group = vim.api.nvim_create_augroup("hunt_highlights", { clear = true }),
 		callback = define_highlights,
-		desc = "Re-apply HauntAnnotation highlight after colorscheme change",
+		desc = "Re-apply HuntAnnotation highlight after colorscheme change",
 	})
 end
 
---- Get or create the namespace for haunt extmarks
+--- Get or create the namespace for hunt extmarks
 ---@return number namespace The namespace ID
 function M.get_namespace()
 	if not _namespace then
-		_namespace = vim.api.nvim_create_namespace("haunt")
+		_namespace = vim.api.nvim_create_namespace("hunt")
 	end
 	return _namespace
 end
 
-local config = require("haunt.config")
+local config = require("hunt.config")
 
 -- Track if signs have been defined
 ---@type boolean
@@ -81,7 +81,7 @@ local function ensure_signs_defined()
 	_signs_defined = true
 
 	local cfg = config.get()
-	vim.fn.sign_define("HauntBookmark", {
+	vim.fn.sign_define("HuntBookmark", {
 		text = cfg.sign,
 		texthl = cfg.sign_hl,
 		linehl = cfg.line_hl or "",
@@ -89,9 +89,9 @@ local function ensure_signs_defined()
 end
 
 --- Setup bookmark signs with vim.fn.sign_define()
---- Creates a "HauntBookmark" sign that can be reused for all bookmarks
+--- Creates a "HuntBookmark" sign that can be reused for all bookmarks
 --- Lightweight - stores config via config module, doesn't define signs yet
----@param opts? HauntConfig Optional configuration table
+---@param opts? HuntConfig Optional configuration table
 ---@return nil
 function M.setup_signs(opts)
 	-- Config is already set up by init.lua, this is just for compatibility
@@ -103,7 +103,7 @@ function M.setup_signs(opts)
 end
 
 --- Get the current display configuration
----@return HauntConfig config The current display configuration
+---@return HuntConfig config The current display configuration
 function M.get_config()
 	return config.get()
 end
@@ -123,14 +123,14 @@ function M.show_annotation(bufnr, line, note)
 	ensure_highlights_defined()
 
 	if not is_valid_buffer(bufnr) then
-		vim.notify("haunt.nvim: show_annotation: invalid buffer", vim.log.levels.WARN)
+		vim.notify("hunt.nvim: show_annotation: invalid buffer", vim.log.levels.WARN)
 		return nil
 	end
 
 	local line_count = vim.api.nvim_buf_line_count(bufnr)
 	if line < 1 or line > line_count then
 		vim.notify(
-			string.format("haunt.nvim: Cannot show annotation at line %d (buffer has %d lines)", line, line_count),
+			string.format("hunt.nvim: Cannot show annotation at line %d (buffer has %d lines)", line, line_count),
 			vim.log.levels.WARN
 		)
 		return nil
@@ -138,7 +138,7 @@ function M.show_annotation(bufnr, line, note)
 
 	local cfg = config.get()
 	-- some guards
-	local hl_group = cfg.virt_text_hl or "HauntAnnotation"
+	local hl_group = cfg.virt_text_hl or "HuntAnnotation"
 	local prefix = cfg.annotation_prefix or "  "
 	local suffix = cfg.annotation_suffix or ""
 	local virt_text_pos = cfg.virt_text_pos or "eol"
@@ -175,12 +175,12 @@ end
 function M.set_bookmark_mark(bufnr, bookmark)
 	-- Validate inputs
 	if not is_valid_buffer(bufnr) then
-		vim.notify("haunt.nvim: set_bookmark_mark: invalid buffer number", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: set_bookmark_mark: invalid buffer number", vim.log.levels.ERROR)
 		return nil
 	end
 
 	if type(bookmark) ~= "table" or type(bookmark.line) ~= "number" then
-		vim.notify("haunt.nvim: set_bookmark_mark: invalid bookmark structure", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: set_bookmark_mark: invalid bookmark structure", vim.log.levels.ERROR)
 		return nil
 	end
 
@@ -192,7 +192,7 @@ function M.set_bookmark_mark(bufnr, bookmark)
 	if line < 0 or line >= line_count then
 		vim.notify(
 			string.format(
-				"haunt.nvim: set_bookmark_mark: line %d out of bounds (buffer has %d lines)",
+				"hunt.nvim: set_bookmark_mark: line %d out of bounds (buffer has %d lines)",
 				bookmark.line,
 				line_count
 			),
@@ -211,7 +211,7 @@ function M.set_bookmark_mark(bufnr, bookmark)
 
 	if not ok then
 		vim.notify(
-			string.format("haunt.nvim: set_bookmark_mark: failed to create extmark: %s", tostring(extmark_id)),
+			string.format("hunt.nvim: set_bookmark_mark: failed to create extmark: %s", tostring(extmark_id)),
 			vim.log.levels.ERROR
 		)
 		return nil
@@ -229,12 +229,12 @@ end
 function M.get_extmark_line(bufnr, extmark_id)
 	-- Validate inputs
 	if not is_valid_buffer(bufnr) then
-		vim.notify("haunt.nvim: get_extmark_line: invalid buffer number", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: get_extmark_line: invalid buffer number", vim.log.levels.ERROR)
 		return nil
 	end
 
 	if type(extmark_id) ~= "number" then
-		vim.notify("haunt.nvim: get_extmark_line: invalid extmark ID", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: get_extmark_line: invalid extmark ID", vim.log.levels.ERROR)
 		return nil
 	end
 
@@ -263,12 +263,12 @@ end
 function M.delete_bookmark_mark(bufnr, extmark_id)
 	-- Validate inputs
 	if not is_valid_buffer(bufnr) then
-		vim.notify("haunt.nvim: delete_bookmark_mark: invalid buffer number", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: delete_bookmark_mark: invalid buffer number", vim.log.levels.ERROR)
 		return false
 	end
 
 	if type(extmark_id) ~= "number" then
-		vim.notify("haunt.nvim: delete_bookmark_mark: invalid extmark ID", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: delete_bookmark_mark: invalid extmark ID", vim.log.levels.ERROR)
 		return false
 	end
 
@@ -277,7 +277,7 @@ function M.delete_bookmark_mark(bufnr, extmark_id)
 
 	if not ok then
 		vim.notify(
-			string.format("haunt.nvim: delete_bookmark_mark: failed to delete extmark %d", extmark_id),
+			string.format("hunt.nvim: delete_bookmark_mark: failed to delete extmark %d", extmark_id),
 			vim.log.levels.WARN
 		)
 		return false
@@ -293,7 +293,7 @@ end
 function M.clear_buffer_marks(bufnr)
 	-- Validate input
 	if not is_valid_buffer(bufnr) then
-		vim.notify("haunt.nvim: clear_buffer_marks: invalid buffer number", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: clear_buffer_marks: invalid buffer number", vim.log.levels.ERROR)
 		return false
 	end
 
@@ -301,15 +301,15 @@ function M.clear_buffer_marks(bufnr)
 	local ok = pcall(vim.api.nvim_buf_clear_namespace, bufnr, M.get_namespace(), 0, -1)
 
 	if not ok then
-		vim.notify("haunt.nvim: clear_buffer_marks: failed to clear extmarks", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: clear_buffer_marks: failed to clear extmarks", vim.log.levels.ERROR)
 		return false
 	end
 
 	return true
 end
 
--- Sign group name for organizing haunt signs
-local SIGN_GROUP = "haunt_signs"
+-- Sign group name for organizing hunt signs
+local SIGN_GROUP = "hunt_signs"
 
 --- Place a sign at a specific line in a buffer
 ---@param bufnr number Buffer number
@@ -317,7 +317,7 @@ local SIGN_GROUP = "haunt_signs"
 ---@param sign_id number Unique sign ID
 function M.place_sign(bufnr, line, sign_id)
 	ensure_signs_defined()
-	vim.fn.sign_place(sign_id, SIGN_GROUP, "HauntBookmark", bufnr, { lnum = line, priority = 10 })
+	vim.fn.sign_place(sign_id, SIGN_GROUP, "HuntBookmark", bufnr, { lnum = line, priority = 10 })
 end
 
 --- Remove a sign from a buffer
@@ -330,7 +330,7 @@ function M.unplace_sign(bufnr, sign_id)
 	})
 end
 
---- Clear all haunt signs from a buffer
+--- Clear all hunt signs from a buffer
 ---@param bufnr number Buffer number to clear signs from
 ---@return boolean success True if clearing was successful
 function M.clear_buffer_signs(bufnr)

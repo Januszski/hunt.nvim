@@ -12,9 +12,9 @@ describe("haunt.display", function()
 
 	before_each(function()
 		helpers.reset_modules()
-		display = require("haunt.display")
-		persistence = require("haunt.persistence")
-		config = require("haunt.config")
+		display = require("hunt.display")
+		persistence = require("hunt.persistence")
+		config = require("hunt.config")
 		config.setup() -- Initialize with defaults
 	end)
 

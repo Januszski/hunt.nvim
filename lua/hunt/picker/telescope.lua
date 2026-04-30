@@ -1,9 +1,9 @@
 ---@toc_entry Picker Telescope
----@tag haunt-picker-telescope
+---@tag hunt-picker-telescope
 ---@text
 --- # Picker Telescope ~
 ---
---- Telescope.nvim picker implementation for haunt.nvim.
+--- Telescope.nvim picker implementation for hunt.nvim.
 --- Requires Telescope.nvim (https://github.com/nvim-telescope/telescope.nvim) to be installed.
 ---
 --- Picker actions: ~
@@ -11,13 +11,13 @@
 ---   - `d` (normal mode): Delete the selected bookmark
 ---   - `a` (normal mode): Edit the bookmark's annotation
 ---
---- The keybindings can be customized via |HauntConfig|.picker_keys.
+--- The keybindings can be customized via |HuntConfig|.picker_keys.
 
 ---@type PickerModule
 ---@diagnostic disable-next-line: missing-fields
 local M = {}
 
-local utils = require("haunt.picker.utils")
+local utils = require("hunt.picker.utils")
 
 ---@private
 ---@type PickerRouter|nil
@@ -56,17 +56,17 @@ function M.show(opts)
 	local has_devicons, devicons = pcall(require, "nvim-web-devicons")
 
 	local api = utils.get_api()
-	local haunt = utils.get_haunt()
+	local hunt = utils.get_hunt()
 
 	-- Check if there are any bookmarks
 	local bookmarks = api.get_bookmarks()
 	if #bookmarks == 0 then
-		vim.notify("haunt.nvim: No bookmarks found", vim.log.levels.INFO)
+		vim.notify("hunt.nvim: No bookmarks found", vim.log.levels.INFO)
 		return true
 	end
 
 	-- Get keybinding configuration
-	local cfg = haunt.get_config()
+	local cfg = hunt.get_config()
 	local picker_keys = cfg.picker_keys
 
 	local items = utils.build_picker_items(bookmarks)
@@ -131,7 +131,7 @@ function M.show(opts)
 		-- Delete the bookmark by its ID
 		local success = api.delete_by_id(selection.value.id)
 		if not success then
-			vim.notify("haunt.nvim: Failed to delete bookmark", vim.log.levels.WARN)
+			vim.notify("hunt.nvim: Failed to delete bookmark", vim.log.levels.WARN)
 			return
 		end
 
@@ -139,7 +139,7 @@ function M.show(opts)
 		local remaining = api.get_bookmarks()
 		if #remaining == 0 then
 			actions.close(prompt_bufnr)
-			vim.notify("haunt.nvim: No bookmarks remaining", vim.log.levels.INFO)
+			vim.notify("hunt.nvim: No bookmarks remaining", vim.log.levels.INFO)
 			return
 		end
 
@@ -219,7 +219,7 @@ function M.show(opts)
 	end
 
 	local picker_opts = vim.tbl_deep_extend("force", {
-		prompt_title = "Hauntings",
+		prompt_title = "Huntings",
 		finder = finders.new_table({
 			results = items,
 			entry_maker = function(item)

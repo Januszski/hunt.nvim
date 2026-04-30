@@ -8,7 +8,7 @@ describe("haunt.utils", function()
 
 	before_each(function()
 		helpers.reset_modules()
-		utils = require("haunt.utils")
+		utils = require("hunt.utils")
 	end)
 
 	describe("normalize_filepath", function()

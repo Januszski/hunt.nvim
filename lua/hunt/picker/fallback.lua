@@ -1,5 +1,5 @@
 ---@toc_entry Picker Fallback
----@tag haunt-picker-fallback
+---@tag hunt-picker-fallback
 ---@text
 --- # Picker Fallback ~
 ---
@@ -15,7 +15,7 @@
 ---@diagnostic disable-next-line: missing-fields
 local M = {}
 
-local utils = require("haunt.picker.utils")
+local utils = require("hunt.picker.utils")
 
 --- Check if the fallback picker is available
 --- Always returns true since vim.ui.select is built into Neovim
@@ -39,12 +39,12 @@ function M.show(_opts)
 
 	local bookmarks = api.get_bookmarks()
 	if #bookmarks == 0 then
-		vim.notify("haunt.nvim: No bookmarks found", vim.log.levels.INFO)
+		vim.notify("hunt.nvim: No bookmarks found", vim.log.levels.INFO)
 		return true
 	end
 
 	vim.ui.select(utils.build_picker_items(bookmarks), {
-		prompt = "Hauntings",
+		prompt = "Huntings",
 		format_item = function(item)
 			return item.text
 		end,

@@ -9,9 +9,9 @@ describe("haunt user commands", function()
 
 	before_each(function()
 		helpers.reset_modules()
-		haunt = require("haunt")
+		haunt = require("plugin.hunt")
 		haunt.setup()
-		api = require("haunt.api")
+		api = require("hunt.api")
 		api._reset_for_testing()
 	end)
 
@@ -237,7 +237,7 @@ describe("haunt user commands", function()
 		it("calls picker.show without throwing", function()
 			-- HauntList requires Snacks.nvim which may not be installed in test env
 			-- We just verify the picker module can be required and show() can be called
-			local picker = require("haunt.picker")
+			local picker = require("hunt.picker.init")
 			local ok = pcall(picker.show)
 			-- Should not throw, even if Snacks is not available (it notifies instead)
 			assert.is_true(ok)

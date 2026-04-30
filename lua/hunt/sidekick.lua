@@ -1,5 +1,5 @@
 ---@toc_entry Sidekick
----@tag haunt-sidekick
+---@tag hunt-sidekick
 ---@text
 --- # Sidekick ~
 ---
@@ -43,7 +43,7 @@ end
 ---
 ---@usage >lua
 ---   -- Get all bookmarks
----   local sidekick = require('haunt.sidekick')
+---   local sidekick = require('hunt.sidekick')
 ---   local locations = sidekick.get_locations()
 ---
 ---   -- Get only current buffer bookmarks
@@ -61,7 +61,7 @@ function M.get_locations(opts)
 	local current_buffer = opts.current_buffer or false
 
 	-- Get all bookmarks from the API
-	local api = require("haunt.api")
+	local api = require("hunt.api")
 	local bookmarks = api.get_bookmarks()
 
 	-- If no bookmarks, return empty string

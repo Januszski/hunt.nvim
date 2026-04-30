@@ -32,11 +32,11 @@ describe("haunt.picker.fallback", function()
 		end
 
 		-- Initialize modules
-		haunt = require("haunt")
+		haunt = require("plugin.hunt")
 		haunt.setup()
-		api = require("haunt.api")
+		api = require("hunt.api")
 		api._reset_for_testing()
-		fallback = require("haunt.picker.fallback")
+		fallback = require("hunt.picker.fallback")
 	end)
 
 	after_each(function()

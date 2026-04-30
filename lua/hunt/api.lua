@@ -1,9 +1,9 @@
 ---@toc_entry API Functions
----@tag haunt-api
+---@tag hunt-api
 ---@text
 --- # API Functions ~
 ---
---- All API functions are available through `require('haunt.api')`.
+--- All API functions are available through `require('hunt.api')`.
 ---
 --- These functions provide the core functionality for managing bookmarks:
 --- creating, navigating, annotating, and deleting bookmarks.
@@ -36,7 +36,7 @@
 ---@diagnostic disable-next-line: missing-fields
 local M = {}
 
-local utils = require("haunt.utils")
+local utils = require("hunt.utils")
 
 ---@private
 ---@type boolean
@@ -68,22 +68,22 @@ local sidekick = nil
 ---@private
 local function ensure_modules()
 	if not store then
-		store = require("haunt.store")
+		store = require("hunt.store")
 	end
 	if not display then
-		display = require("haunt.display")
+		display = require("hunt.display")
 	end
 	if not persistence then
-		persistence = require("haunt.persistence")
+		persistence = require("hunt.persistence")
 	end
 	if not navigation then
-		navigation = require("haunt.navigation")
+		navigation = require("hunt.navigation")
 	end
 	if not restoration then
-		restoration = require("haunt.restoration")
+		restoration = require("hunt.restoration")
 	end
 	if not sidekick then
-		sidekick = require("haunt.sidekick")
+		sidekick = require("hunt.sidekick")
 	end
 end
 
@@ -125,14 +125,14 @@ local function create_and_persist_bookmark(bufnr, filepath, line, note)
 	-- Create bookmark with unique ID
 	local new_bookmark, err = persistence.create_bookmark(filepath, line, note)
 	if not new_bookmark then
-		vim.notify("haunt.nvim: Failed to create bookmark: " .. (err or "unknown error"), vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: Failed to create bookmark: " .. (err or "unknown error"), vim.log.levels.ERROR)
 		return false
 	end
 
 	-- Set extmark for line tracking
 	local extmark_id = display.set_bookmark_mark(bufnr, new_bookmark)
 	if not extmark_id then
-		vim.notify("haunt.nvim: Failed to create extmark", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: Failed to create extmark", vim.log.levels.ERROR)
 		return false
 	end
 
@@ -162,7 +162,7 @@ local function create_and_persist_bookmark(bufnr, filepath, line, note)
 		end
 		display.delete_bookmark_mark(bufnr, extmark_id)
 		display.unplace_sign(bufnr, extmark_id)
-		vim.notify("haunt.nvim: Failed to save bookmarks", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: Failed to save bookmarks", vim.log.levels.ERROR)
 		return false
 	end
 
@@ -207,7 +207,7 @@ local function update_bookmark_annotation(bufnr, line, bookmark, new_note)
 			bookmark.annotation_extmark_id = display.show_annotation(bufnr, line, old_note or "")
 		end
 
-		vim.notify("haunt.nvim: Failed to save bookmarks after annotation update", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: Failed to save bookmarks after annotation update", vim.log.levels.ERROR)
 		return false
 	end
 
@@ -223,18 +223,18 @@ end
 ---@return boolean success True if toggled successfully
 ---
 ---@usage >lua
----   require('haunt.api').toggle_annotation()
+---   require('hunt.api').toggle_annotation()
 --- <
 function M.toggle_annotation()
 	ensure_modules()
 	---@cast store -nil
 	---@cast display -nil
 
-	require("haunt")._ensure_initialized()
+	require("hunt")._ensure_initialized()
 
 	-- Set up autosave autocmds after first bookmark is created
 	if not _autosave_setup then
-		require("haunt").setup_autocmds()
+		require("hunt").setup_autocmds()
 		_autosave_setup = true
 	end
 
@@ -242,7 +242,7 @@ function M.toggle_annotation()
 
 	local valid, error_msg = utils.validate_buffer_for_bookmarks(bufnr)
 	if not valid then
-		vim.notify("haunt.nvim: " .. error_msg, vim.log.levels.WARN)
+		vim.notify("hunt.nvim: " .. error_msg, vim.log.levels.WARN)
 		return false
 	end
 
@@ -253,7 +253,7 @@ function M.toggle_annotation()
 	-- Check if a bookmark exists at this line
 	local existing_bookmark, _ = store.get_bookmark_at_line(filepath, line)
 	if not existing_bookmark then
-		vim.notify("haunt.nvim: No bookmark on this line", vim.log.levels.INFO)
+		vim.notify("hunt.nvim: No bookmark on this line", vim.log.levels.INFO)
 		return false
 	end
 
@@ -282,7 +282,7 @@ end
 ---@return boolean visible The new visibility state (true = visible, false = hidden)
 ---
 ---@usage >lua
----   local visible = require('haunt.api').toggle_all_lines()
+---   local visible = require('hunt.api').toggle_all_lines()
 ---   print(visible and "Annotations shown" or "Annotations hidden")
 --- <
 function M.toggle_all_lines()
@@ -367,19 +367,19 @@ end
 ---@return boolean success True if bookmark was deleted
 ---
 ---@usage >lua
----   require('haunt.api').delete()
+---   require('hunt.api').delete()
 --- <
 function M.delete()
 	ensure_modules()
 	---@cast store -nil
 
-	require("haunt")._ensure_initialized()
+	require("hunt")._ensure_initialized()
 
 	local bufnr = vim.api.nvim_get_current_buf()
 
 	local valid, error_msg = utils.validate_buffer_for_bookmarks(bufnr)
 	if not valid then
-		vim.notify("haunt.nvim: " .. error_msg, vim.log.levels.WARN)
+		vim.notify("hunt.nvim: " .. error_msg, vim.log.levels.WARN)
 		return false
 	end
 
@@ -390,7 +390,7 @@ function M.delete()
 	-- Check if a bookmark exists at this line
 	local existing_bookmark, _ = store.get_bookmark_at_line(filepath, line)
 	if not existing_bookmark then
-		vim.notify("haunt.nvim: No bookmark on this line", vim.log.levels.INFO)
+		vim.notify("hunt.nvim: No bookmark on this line", vim.log.levels.INFO)
 		return false
 	end
 
@@ -400,11 +400,11 @@ function M.delete()
 	-- Save to persistence
 	local save_ok = store.save()
 	if not save_ok then
-		vim.notify("haunt.nvim: Failed to save bookmarks after removal", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: Failed to save bookmarks after removal", vim.log.levels.ERROR)
 		return false
 	end
 
-	vim.notify("haunt.nvim: Bookmark deleted", vim.log.levels.INFO)
+	vim.notify("hunt.nvim: Bookmark deleted", vim.log.levels.INFO)
 	return true
 end
 
@@ -419,21 +419,21 @@ end
 ---
 ---@usage >lua
 ---   -- Prompt user for annotation
----   require('haunt.api').annotate()
+---   require('hunt.api').annotate()
 ---
 ---   -- Set annotation programmatically
----   require('haunt.api').annotate("TODO: Fix this bug")
+---   require('hunt.api').annotate("TODO: Fix this bug")
 --- <
 function M.annotate(text)
 	ensure_modules()
 	---@cast store -nil
 
 	-- Ensure display layer is initialized
-	require("haunt")._ensure_initialized()
+	require("hunt")._ensure_initialized()
 
 	-- Set up autosave autocmds after first bookmark is created
 	if not _autosave_setup then
-		require("haunt").setup_autocmds()
+		require("hunt").setup_autocmds()
 		_autosave_setup = true
 	end
 
@@ -443,7 +443,7 @@ function M.annotate(text)
 	-- Validate buffer can have bookmarks
 	local valid, error_msg = utils.validate_buffer_for_bookmarks(bufnr)
 	if not valid then
-		vim.notify("haunt.nvim: " .. error_msg, vim.log.levels.WARN)
+		vim.notify("hunt.nvim: " .. error_msg, vim.log.levels.WARN)
 		return false
 	end
 
@@ -472,14 +472,14 @@ function M.annotate(text)
 	if existing_bookmark then
 		local success = update_bookmark_annotation(bufnr, line, existing_bookmark, annotation)
 		if success then
-			vim.notify("haunt.nvim: Annotation updated", vim.log.levels.INFO)
+			vim.notify("hunt.nvim: Annotation updated", vim.log.levels.INFO)
 		end
 		return success
 	end
 
 	local success = create_and_persist_bookmark(bufnr, filepath, line, annotation)
 	if success then
-		vim.notify("haunt.nvim: Annotation created", vim.log.levels.INFO)
+		vim.notify("hunt.nvim: Annotation created", vim.log.levels.INFO)
 	end
 	return success
 end
@@ -489,7 +489,7 @@ end
 ---@return boolean success True if cleared successfully
 ---
 ---@usage >lua
----   require('haunt.api').clear()
+---   require('hunt.api').clear()
 --- <
 function M.clear()
 	ensure_modules()
@@ -498,7 +498,7 @@ function M.clear()
 	local current_file = utils.normalize_filepath(vim.fn.expand("%"))
 
 	if current_file == "" then
-		vim.notify("haunt.nvim: No file in current buffer", vim.log.levels.WARN)
+		vim.notify("hunt.nvim: No file in current buffer", vim.log.levels.WARN)
 		return false
 	end
 
@@ -513,7 +513,7 @@ function M.clear()
 
 	-- early return for no bookmarks
 	if #file_bookmarks == 0 then
-		vim.notify("haunt.nvim: No bookmarks to clear in current file", vim.log.levels.INFO)
+		vim.notify("hunt.nvim: No bookmarks to clear in current file", vim.log.levels.INFO)
 		return true
 	end
 
@@ -530,10 +530,10 @@ function M.clear()
 
 	if save_ok then
 		local count = #file_bookmarks
-		vim.notify(string.format("haunt.nvim: Cleared %d bookmark(s) from current file", count), vim.log.levels.INFO)
+		vim.notify(string.format("hunt.nvim: Cleared %d bookmark(s) from current file", count), vim.log.levels.INFO)
 		return true
 	else
-		vim.notify("haunt.nvim: Failed to save after clearing bookmarks", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: Failed to save after clearing bookmarks", vim.log.levels.ERROR)
 		return false
 	end
 end
@@ -545,14 +545,14 @@ end
 ---@return boolean success True if cleared successfully
 ---
 ---@usage >lua
----   require('haunt.api').clear_all()
+---   require('hunt.api').clear_all()
 --- <
 function M.clear_all()
 	ensure_modules()
 	---@cast store -nil
 
 	if not store.has_bookmarks() then
-		vim.notify("haunt.nvim: No bookmarks to clear", vim.log.levels.INFO)
+		vim.notify("hunt.nvim: No bookmarks to clear", vim.log.levels.INFO)
 		return true
 	end
 
@@ -560,7 +560,7 @@ function M.clear_all()
 
 	-- no = 2, cancelled = 0
 	if choice ~= 1 then
-		vim.notify("haunt.nvim: Clear all cancelled", vim.log.levels.INFO)
+		vim.notify("hunt.nvim: Clear all cancelled", vim.log.levels.INFO)
 		return false
 	end
 
@@ -599,10 +599,10 @@ function M.clear_all()
 	local save_ok = store.save()
 
 	if save_ok then
-		vim.notify(string.format("haunt.nvim: Cleared all %d bookmark(s)", count), vim.log.levels.INFO)
+		vim.notify(string.format("hunt.nvim: Cleared all %d bookmark(s)", count), vim.log.levels.INFO)
 		return true
 	else
-		vim.notify("haunt.nvim: Failed to save after clearing all bookmarks", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: Failed to save after clearing all bookmarks", vim.log.levels.ERROR)
 		return false
 	end
 end
@@ -616,9 +616,9 @@ end
 ---@return boolean success True if the bookmark was deleted
 ---
 ---@usage >lua
----   local bookmarks = require('haunt.api').get_bookmarks()
+---   local bookmarks = require('hunt.api').get_bookmarks()
 ---   if #bookmarks > 0 then
----     require('haunt.api').delete_by_id(bookmarks[1].id)
+---     require('hunt.api').delete_by_id(bookmarks[1].id)
 ---   end
 --- <
 function M.delete_by_id(bookmark_id)
@@ -627,13 +627,13 @@ function M.delete_by_id(bookmark_id)
 
 	local bookmark, _ = store.find_by_id(bookmark_id)
 	if not bookmark then
-		vim.notify("haunt.nvim: Bookmark not found", vim.log.levels.WARN)
+		vim.notify("hunt.nvim: Bookmark not found", vim.log.levels.WARN)
 		return false
 	end
 
 	local bufnr, err = utils.ensure_buffer_for_file(bookmark.file)
 	if not bufnr then
-		vim.notify("haunt.nvim: " .. (err or "unknown error"), vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: " .. (err or "unknown error"), vim.log.levels.ERROR)
 		return false
 	end
 
@@ -642,14 +642,14 @@ function M.delete_by_id(bookmark_id)
 
 	local save_ok = store.save()
 	if not save_ok then
-		vim.notify("haunt.nvim: Failed to save bookmarks after deletion", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: Failed to save bookmarks after deletion", vim.log.levels.ERROR)
 		return false
 	end
 
 	return true
 end
 
---- Populate the quickfix list with haunt bookmarks.
+--- Populate the quickfix list with hunt bookmarks.
 ---
 ---@param opts? QuickfixOpts Options for filtering and formatting
 ---@return boolean success True if the quickfix list was updated
@@ -659,11 +659,11 @@ function M.to_quickfix(opts)
 
 	local items = store.get_quickfix_items(opts)
 	if #items == 0 then
-		vim.notify("haunt.nvim: No bookmarks to add to quickfix", vim.log.levels.INFO)
+		vim.notify("hunt.nvim: No bookmarks to add to quickfix", vim.log.levels.INFO)
 		return false
 	end
 
-	local title = (opts and opts.current_buffer) and "Haunt (buffer)" or "Haunt"
+	local title = (opts and opts.current_buffer) and "Hunt (buffer)" or "Hunt"
 
 	vim.fn.setqflist({}, " ", {
 		title = title,
@@ -684,10 +684,10 @@ end
 ---@return boolean success True if yank was successful
 ---
 ---@usage >lua
----   require('haunt.api').yank_locations()
+---   require('hunt.api').yank_locations()
 ---
 ---   -- Yank only current buffer bookmarks
----   require('haunt.api').yank_locations({ current_buffer = true })
+---   require('hunt.api').yank_locations({ current_buffer = true })
 --- <
 function M.yank_locations(opts)
 	ensure_modules()
@@ -717,7 +717,7 @@ end
 ---@return Bookmark[] bookmarks Array of all bookmarks
 ---
 ---@usage >lua
----   local bookmarks = require('haunt.api').get_bookmarks()
+---   local bookmarks = require('hunt.api').get_bookmarks()
 ---   for _, bookmark in ipairs(bookmarks) do
 ---     print(string.format("%s:%d - %s",
 ---       bookmark.file, bookmark.line, bookmark.note or ""))
@@ -737,7 +737,7 @@ end
 ---@return boolean has_bookmarks True if bookmarks exist, false otherwise
 ---
 ---@usage >lua
----   if require('haunt.api').has_bookmarks() then
+---   if require('hunt.api').has_bookmarks() then
 ---     print("Bookmarks found!")
 ---   end
 --- <
@@ -767,7 +767,7 @@ end
 ---@return boolean success True if save succeeded
 ---
 ---@usage >lua
----   require('haunt.api').save()
+---   require('hunt.api').save()
 --- <
 function M.save()
 	ensure_modules()
@@ -783,7 +783,7 @@ end
 ---@param callback? fun(success: boolean) Optional callback when save completes
 ---
 ---@usage >lua
----   require('haunt.api').save_async(function(success)
+---   require('hunt.api').save_async(function(success)
 ---     if not success then
 ---       vim.notify("Failed to save bookmarks", vim.log.levels.WARN)
 ---     end
@@ -802,7 +802,7 @@ end
 ---@return boolean success True if jumped to a bookmark
 ---
 ---@usage >lua
----   require('haunt.api').next()
+---   require('hunt.api').next()
 --- <
 function M.next()
 	ensure_modules()
@@ -817,7 +817,7 @@ end
 ---@return boolean success True if jumped to a bookmark
 ---
 ---@usage >lua
----   require('haunt.api').prev()
+---   require('hunt.api').prev()
 --- <
 function M.prev()
 	ensure_modules()
@@ -858,10 +858,10 @@ end
 ---
 ---@usage >lua
 ---   -- Switch to a project-specific bookmark directory
----   require('haunt.api').change_data_dir('/path/to/project/.bookmarks/')
+---   require('hunt.api').change_data_dir('/path/to/project/.bookmarks/')
 ---
 ---   -- Reset to default data directory
----   require('haunt.api').change_data_dir(nil)
+---   require('hunt.api').change_data_dir(nil)
 --- <
 function M.change_data_dir(new_dir)
 	ensure_modules()

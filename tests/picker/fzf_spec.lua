@@ -24,11 +24,11 @@ describe("haunt.picker.fzf", function()
 		end
 
 		-- Initialize modules
-		haunt = require("haunt")
+		haunt = require("plugin.hunt")
 		haunt.setup()
-		api = require("haunt.api")
+		api = require("hunt.api")
 		api._reset_for_testing()
-		fzf_picker = require("haunt.picker.fzf")
+		fzf_picker = require("hunt.picker.fzf")
 	end)
 
 	after_each(function()
@@ -137,11 +137,11 @@ describe("haunt.picker.fzf with mock", function()
 		end
 
 		-- Initialize modules
-		haunt = require("haunt")
+		haunt = require("plugin.hunt")
 		haunt.setup()
-		api = require("haunt.api")
+		api = require("hunt.api")
 		api._reset_for_testing()
-		fzf_picker = require("haunt.picker.fzf")
+		fzf_picker = require("hunt.picker.fzf")
 	end)
 
 	after_each(function()
@@ -158,7 +158,7 @@ describe("haunt.picker.fzf with mock", function()
 		it("returns false when fzf-lua is not installed", function()
 			package.loaded["fzf-lua"] = nil
 			package.loaded["haunt.picker.fzf"] = nil
-			fzf_picker = require("haunt.picker.fzf")
+			fzf_picker = require("hunt.picker.fzf")
 
 			assert.is_false(fzf_picker.is_available())
 
@@ -181,7 +181,7 @@ describe("haunt.picker.fzf with mock", function()
 		it("returns false when fzf-lua is not available", function()
 			package.loaded["fzf-lua"] = nil
 			package.loaded["haunt.picker.fzf"] = nil
-			fzf_picker = require("haunt.picker.fzf")
+			fzf_picker = require("hunt.picker.fzf")
 
 			local result = fzf_picker.show()
 			assert.is_false(result)

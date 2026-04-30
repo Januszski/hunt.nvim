@@ -87,11 +87,11 @@ describe("haunt.picker.snacks", function()
 		end
 
 		-- Initialize modules
-		haunt = require("haunt")
+		haunt = require("plugin.hunt")
 		haunt.setup()
-		api = require("haunt.api")
+		api = require("hunt.api")
 		api._reset_for_testing()
-		snacks_picker = require("haunt.picker.snacks")
+		snacks_picker = require("hunt.picker.snacks")
 	end)
 
 	after_each(function()
@@ -108,7 +108,7 @@ describe("haunt.picker.snacks", function()
 		it("returns false when Snacks is not installed", function()
 			package.loaded["snacks"] = nil
 			package.loaded["haunt.picker.snacks"] = nil
-			snacks_picker = require("haunt.picker.snacks")
+			snacks_picker = require("hunt.picker.snacks")
 
 			assert.is_false(snacks_picker.is_available())
 
@@ -131,7 +131,7 @@ describe("haunt.picker.snacks", function()
 		it("returns false when Snacks is not available", function()
 			package.loaded["snacks"] = nil
 			package.loaded["haunt.picker.snacks"] = nil
-			snacks_picker = require("haunt.picker.snacks")
+			snacks_picker = require("hunt.picker.snacks")
 
 			local result = snacks_picker.show()
 			assert.is_false(result)

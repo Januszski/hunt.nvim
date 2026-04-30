@@ -24,11 +24,11 @@ describe("haunt.picker.telescope", function()
 		end
 
 		-- Initialize modules
-		haunt = require("haunt")
+		haunt = require("plugin.hunt")
 		haunt.setup()
-		api = require("haunt.api")
+		api = require("hunt.api")
 		api._reset_for_testing()
-		telescope_picker = require("haunt.picker.telescope")
+		telescope_picker = require("hunt.picker.telescope")
 	end)
 
 	after_each(function()

@@ -5,13 +5,13 @@ _G.MiniDoc = MiniDoc
 
 -- define order for the docs
 local files = {
-	"lua/haunt/init.lua", -- Main module, introduction, TOC
-	"lua/haunt/config.lua", -- Configuration options
-	"lua/haunt/api.lua", -- Public API functions
-	"lua/haunt/persistence.lua", -- Bookmark structure
-	"lua/haunt/picker.lua", -- Picker integration
-	"lua/haunt/sidekick.lua", -- Sidekick integration
-	"plugin/haunt.lua", -- Commands
+	"lua/hunt/init.lua", -- Main module, introduction, TOC
+	"lua/hunt/config.lua", -- Configuration options
+	"lua/hunt/api.lua", -- Public API functions
+	"lua/hunt/persistence.lua", -- Bookmark structure
+	"lua/hunt/picker.lua", -- Picker integration
+	"lua/hunt/sidekick.lua", -- Sidekick integration
+	"plugin/hunt.lua", -- Commands
 }
 
-MiniDoc.generate(files, "doc/haunt.txt")
+MiniDoc.generate(files, "doc/hunt.txt")
