@@ -5,9 +5,9 @@
 ---@field is_initialized fun(): boolean
 ---@field show_annotation fun(bufnr: number, line: number, note: string): number|nil
 ---@field hide_annotation fun(bufnr: number, extmark_id: number): boolean
----@field set_bookmark_mark fun(bufnr: number, bookmark: Bookmark): number|nil
+---@field set_mark fun(bufnr: number, mark: Mark): number|nil
 ---@field get_extmark_line fun(bufnr: number, extmark_id: number): number|nil
----@field delete_bookmark_mark fun(bufnr: number, extmark_id: number)
+---@field delete_mark fun(bufnr: number, extmark_id: number)
 ---@field clear_buffer_marks fun(bufnr: number)
 ---@field clear_buffer_signs fun(bufnr: number): boolean
 ---@field place_sign fun(bufnr: number, line: number, sign_id: number)
@@ -36,10 +36,99 @@ end
 --- Creates HuntAnnotation highlight group with sensible defaults
 --- Users can override this by defining the highlight group themselves
 local function define_highlights()
-	local existing = vim.api.nvim_get_hl(0, { name = "HuntAnnotation" })
-	if vim.tbl_isempty(existing) then
-		vim.api.nvim_set_hl(0, "HuntAnnotation", { link = "DiagnosticVirtualTextHint" })
+	local highlights = {
+		HuntAnnotation = {
+			link = "DiagnosticVirtualTextHint",
+		},
+
+		-- SIGN HIGHLIGHTS
+		HuntBookmarkSign = {
+			link = "DiagnosticHint",
+		},
+
+		HuntFindingInfoSign = {
+			fg = "#cc9666",
+		},
+
+		HuntFindingLowSign = {
+			fg = "#cc6666",
+		},
+
+		HuntFindingMediumSign = {
+			fg = "#ff4444",
+		},
+
+		HuntFindingHighSign = {
+			fg = "#ff2222",
+			bold = true,
+		},
+
+		HuntFindingCriticalSign = {
+			fg = "#5c0000",
+			bold = true,
+		},
+
+		HuntBookmarkRange = {
+			link = "Visual",
+		},
+
+		HuntFindingInfoRange = {
+			bg = "#cc9666",
+		},
+
+		HuntFindingLowRange = {
+			bg = "#cc6666",
+		},
+
+		HuntFindingMediumRange = {
+			bg = "#ff4444",
+		},
+
+		HuntFindingHighRange = {
+			bg = "#ff2222",
+		},
+
+		HuntFindingCriticalRange = {
+			bg = "#5c0000",
+			bold = true,
+		},
+	}
+
+	for group, opts in pairs(highlights) do
+		local existing = vim.api.nvim_get_hl(0, { name = group })
+
+		-- Only define if user/theme hasn't already defined it
+		if vim.tbl_isempty(existing) then
+			vim.api.nvim_set_hl(0, group, opts)
+		end
 	end
+end
+
+local function get_range_hl(mark)
+	if mark.kind == "finding" then
+		local severity = mark.severity or "medium"
+
+		if severity == "info" then
+			return "HuntFindingInfoRange"
+		end
+
+		if severity == "low" then
+			return "HuntFindingLowRange"
+		end
+
+		if severity == "high" then
+			return "HuntFindingHighRange"
+		end
+
+		if severity == "critical" then
+			return "HuntFindingCriticalRange"
+		end
+
+		return "HuntFindingMediumRange"
+	end
+
+	-- default non-finding marks
+	return "HuntBookmarkRange"
 end
 
 local function ensure_highlights_defined()
@@ -78,18 +167,44 @@ local function ensure_signs_defined()
 	if _signs_defined then
 		return
 	end
+
 	_signs_defined = true
 
-	local cfg = config.get()
-	vim.fn.sign_define("HuntBookmark", {
-		text = cfg.sign,
-		texthl = cfg.sign_hl,
-		linehl = cfg.line_hl or "",
+	-- Generic marks / bookmarks
+	vim.fn.sign_define("HuntMarkBookmark", {
+		text = "󰃀",
+		texthl = "HuntBookmarkSign",
+	})
+
+	-- Findings
+	vim.fn.sign_define("HuntMarkFindingInfo", {
+		text = "🐭",
+		texthl = "HuntFindingInfoSign",
+	})
+
+	vim.fn.sign_define("HuntMarkFindingLow", {
+		text = "🐰",
+		texthl = "HuntFindingLowSign",
+	})
+
+	vim.fn.sign_define("HuntMarkFindingMedium", {
+		text = "🦌",
+		texthl = "HuntFindingMediumSign",
+	})
+
+	vim.fn.sign_define("HuntMarkFindingHigh", {
+		text = "🦬",
+		texthl = "HuntFindingHighSign",
+	})
+
+	vim.fn.sign_define("HuntMarkFindingCritical", {
+		text = "🦅",
+		texthl = "HuntFindingCriticalSign",
 	})
 end
 
---- Setup bookmark signs with vim.fn.sign_define()
---- Creates a "HuntBookmark" sign that can be reused for all bookmarks
+--- Setup mark signs with vim.fn.sign_define()
+--- Creates a "HuntMark" sign that can be reused for all marks
 --- Lightweight - stores config via config module, doesn't define signs yet
 ---@param opts? HuntConfig Optional configuration table
 ---@return nil
@@ -166,52 +281,55 @@ function M.hide_annotation(bufnr, extmark_id)
 	return ok
 end
 
---- Set a bookmark extmark for line tracking
---- Creates an extmark at the bookmark's line that will automatically move with text edits
+--- Set a mark extmark for line tracking
+--- Creates an extmark at the mark's line that will automatically move with text edits
 --- This extmark is separate from the annotation extmark and is used purely for line tracking
----@param bufnr number Buffer number where the bookmark is located
----@param bookmark Bookmark The bookmark data structure
+---@param bufnr number Buffer number where the mark is located
+---@param mark Mark The mark data structure
 ---@return number|nil extmark_id The created extmark ID, or nil if creation failed
-function M.set_bookmark_mark(bufnr, bookmark)
+function M.set_mark(bufnr, mark)
 	-- Validate inputs
 	if not is_valid_buffer(bufnr) then
-		vim.notify("hunt.nvim: set_bookmark_mark: invalid buffer number", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: set_mark: invalid buffer number", vim.log.levels.ERROR)
 		return nil
 	end
 
-	if type(bookmark) ~= "table" or type(bookmark.line) ~= "number" then
-		vim.notify("hunt.nvim: set_bookmark_mark: invalid bookmark structure", vim.log.levels.ERROR)
+	if type(mark) ~= "table" or type(mark.line_start) ~= "number" then
+		vim.notify("hunt.nvim: set_mark: invalid mark structure", vim.log.levels.ERROR)
 		return nil
 	end
 
 	-- Convert from 1-based to 0-based indexing for nvim_buf_set_extmark
-	local line = bookmark.line - 1
+	local line = mark.line_start - 1
 
 	-- Check if line is within buffer bounds
 	local line_count = vim.api.nvim_buf_line_count(bufnr)
 	if line < 0 or line >= line_count then
 		vim.notify(
-			string.format(
-				"hunt.nvim: set_bookmark_mark: line %d out of bounds (buffer has %d lines)",
-				bookmark.line,
-				line_count
-			),
+			string.format("hunt.nvim: set_mark: line %d out of bounds (buffer has %d lines)", mark.line_start, line_count),
 			vim.log.levels.ERROR
 		)
 		return nil
 	end
 
+	local start_row = mark.line_start - 1
+	local end_row = mark.line_end - 1
+
 	-- Create extmark with right_gravity=false so it stays at the beginning of the line
 	-- even when text is inserted at the start of the line
-	local ok, extmark_id = pcall(vim.api.nvim_buf_set_extmark, bufnr, M.get_namespace(), line, 0, {
-		-- Track line movements automatically
+	local hl_group = get_range_hl(mark)
+
+	local ok, extmark_id = pcall(vim.api.nvim_buf_set_extmark, bufnr, M.get_namespace(), start_row, 0, {
+		end_row = end_row,
+		end_col = vim.v.maxcol,
 		right_gravity = false,
-		-- This extmark is invisible - it's only for tracking the line position
+		hl_group = hl_group,
+		hl_mode = "combine",
 	})
 
 	if not ok then
 		vim.notify(
-			string.format("hunt.nvim: set_bookmark_mark: failed to create extmark: %s", tostring(extmark_id)),
+			string.format("hunt.nvim: set_mark: failed to create extmark: %s", tostring(extmark_id)),
 			vim.log.levels.ERROR
 		)
 		return nil
@@ -222,7 +340,7 @@ end
 
 --- Get the current line number for an extmark
 --- Queries the extmark position to find where it has moved to
---- This allows bookmarks to stay synced with the buffer as text is edited
+--- This allows marks to stay synced with the buffer as text is edited
 ---@param bufnr number Buffer number where the extmark is located
 ---@param extmark_id number The extmark ID to query
 ---@return number|nil line The current 1-based line number, or nil if extmark not found
@@ -255,20 +373,20 @@ function M.get_extmark_line(bufnr, extmark_id)
 	return nil
 end
 
---- Delete a bookmark extmark
---- Removes the extmark from the buffer when a bookmark is deleted
+--- Delete a mark extmark
+--- Removes the extmark from the buffer when a mark is deleted
 ---@param bufnr number Buffer number where the extmark is located
 ---@param extmark_id number The extmark ID to delete
 ---@return boolean success True if deletion was successful, false otherwise
-function M.delete_bookmark_mark(bufnr, extmark_id)
+function M.delete_mark(bufnr, extmark_id)
 	-- Validate inputs
 	if not is_valid_buffer(bufnr) then
-		vim.notify("hunt.nvim: delete_bookmark_mark: invalid buffer number", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: delete_mark: invalid buffer number", vim.log.levels.ERROR)
 		return false
 	end
 
 	if type(extmark_id) ~= "number" then
-		vim.notify("hunt.nvim: delete_bookmark_mark: invalid extmark ID", vim.log.levels.ERROR)
+		vim.notify("hunt.nvim: delete_mark: invalid extmark ID", vim.log.levels.ERROR)
 		return false
 	end
 
@@ -276,18 +394,15 @@ function M.delete_bookmark_mark(bufnr, extmark_id)
 	local ok = pcall(vim.api.nvim_buf_del_extmark, bufnr, M.get_namespace(), extmark_id)
 
 	if not ok then
-		vim.notify(
-			string.format("hunt.nvim: delete_bookmark_mark: failed to delete extmark %d", extmark_id),
-			vim.log.levels.WARN
-		)
+		vim.notify(string.format("hunt.nvim: delete_mark: failed to delete extmark %d", extmark_id), vim.log.levels.WARN)
 		return false
 	end
 
 	return true
 end
 
---- Clear all bookmark extmarks from a buffer
---- Useful when reloading bookmarks or clearing all bookmarks
+--- Clear all mark extmarks from a buffer
+--- Useful when reloading marks or clearing all marks
 ---@param bufnr number Buffer number to clear extmarks from
 ---@return boolean success True if clearing was successful, false otherwise
 function M.clear_buffer_marks(bufnr)
@@ -311,13 +426,45 @@ end
 -- Sign group name for organizing hunt signs
 local SIGN_GROUP = "hunt_signs"
 
+local function get_sign_name(mark)
+	if mark.kind == "finding" then
+		local severity = mark.severity or "medium"
+
+		if severity == "info" then
+			return "HuntMarkFindingInfo"
+		end
+
+		if severity == "low" then
+			return "HuntMarkFindingLow"
+		end
+
+		if severity == "high" then
+			return "HuntMarkFindingHigh"
+		end
+
+		if severity == "critical" then
+			return "HuntMarkFindingCritical"
+		end
+
+		return "HuntMarkFindingMedium"
+	end
+
+	return "HuntMarkBookmark"
+end
+
 --- Place a sign at a specific line in a buffer
 ---@param bufnr number Buffer number
----@param line number 1-based line number
+---@param mark Mark
 ---@param sign_id number Unique sign ID
-function M.place_sign(bufnr, line, sign_id)
+function M.place_sign(bufnr, mark, sign_id)
 	ensure_signs_defined()
-	vim.fn.sign_place(sign_id, SIGN_GROUP, "HuntBookmark", bufnr, { lnum = line, priority = 10 })
+
+	local sign_name = get_sign_name(mark)
+
+	vim.fn.sign_place(sign_id, SIGN_GROUP, sign_name, bufnr, {
+		lnum = mark.line_start,
+		priority = 10,
+	})
 end
 
 --- Remove a sign from a buffer

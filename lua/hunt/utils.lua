@@ -1,6 +1,6 @@
 ---@class UtilsModule
 ---@field normalize_filepath fun(path: string): string
----@field validate_buffer_for_bookmarks fun(bufnr: number): boolean, string|nil
+---@field validate_buffer_for_marks fun(bufnr: number): boolean, string|nil
 ---@field ensure_buffer_for_file fun(filepath: string): number|nil, string|nil
 ---@field toggle_quickfix fun(): nil
 
@@ -19,12 +19,12 @@ function M.normalize_filepath(path)
 	return vim.fn.fnamemodify(path, ":p")
 end
 
---- Validate that a buffer can have bookmarks
+--- Validate that a buffer can have marks
 --- Checks for empty filepath, special buffers, buffer types, and modifiable status
 ---@param bufnr number Buffer number to validate
----@return boolean valid True if buffer can have bookmarks
+---@return boolean valid True if buffer can have marks
 ---@return string|nil error_msg Error message if validation fails
-function M.validate_buffer_for_bookmarks(bufnr)
+function M.validate_buffer_for_marks(bufnr)
 	-- Check if buffer exists and is valid
 	if not vim.api.nvim_buf_is_valid(bufnr) then
 		return false, "Invalid buffer"
@@ -35,23 +35,23 @@ function M.validate_buffer_for_bookmarks(bufnr)
 
 	-- Check if buffer has a name
 	if filepath == "" then
-		return false, "Cannot bookmark unnamed buffer"
+		return false, "Cannot mark unnamed buffer"
 	end
 
-	-- Check buffer type (only normal files can have bookmarks)
+	-- Check buffer type (only normal files can have marks)
 	local buftype = vim.bo[bufnr].buftype
 	if buftype ~= "" then
-		return false, "Cannot bookmark special buffers (terminal, help, etc.)"
+		return false, "Cannot mark special buffers (terminal, help, etc.)"
 	end
 
 	-- Check if buffer is modifiable
 	if not vim.bo[bufnr].modifiable then
-		return false, "Cannot bookmark read-only buffer"
+		return false, "Cannot mark read-only buffer"
 	end
 
 	-- Check for special buffer schemes (term://, fugitive://, etc.)
 	if filepath:match("^%w+://") then
-		return false, "Cannot bookmark special buffers (protocol schemes)"
+		return false, "Cannot mark special buffers (protocol schemes)"
 	end
 
 	return true, nil

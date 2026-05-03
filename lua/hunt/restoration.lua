@@ -1,5 +1,5 @@
 ---@class RestorationModule
----@field restore_buffer_bookmarks fun(bufnr: number, annotations_visible: boolean): boolean
+---@field restore_buffer_marks fun(bufnr: number, annotations_visible: boolean): boolean
 ---@field cleanup_buffer_tracking fun(bufnr: number)
 ---@field reset_tracking fun()
 
@@ -30,12 +30,12 @@ local function ensure_modules()
 	end
 end
 
---- Restore visual elements (extmarks, signs, annotations) for a bookmark in a loaded buffer
---- This is called when loading bookmarks to recreate visual state
+--- Restore visual elements (extmarks, signs, annotations) for a mark in a loaded buffer
+--- This is called when loading marks to recreate visual state
 ---@param bufnr number Buffer number
----@param bookmark Bookmark The bookmark to restore
+---@param mark Mark The mark to restore
 ---@param annotations_visible boolean Whether annotations should be displayed
-local function restore_bookmark_display(bufnr, bookmark, annotations_visible)
+local function restore_mark_display(bufnr, mark, annotations_visible)
 	ensure_modules()
 	---@cast display -nil
 
@@ -44,50 +44,50 @@ local function restore_bookmark_display(bufnr, bookmark, annotations_visible)
 	end
 
 	-- Clean up old extmark if it exists to prevent orphaning
-	if bookmark.extmark_id then
-		display.delete_bookmark_mark(bufnr, bookmark.extmark_id)
-		display.unplace_sign(bufnr, bookmark.extmark_id)
+	if mark.extmark_id then
+		display.delete_mark(bufnr, mark.extmark_id)
+		display.unplace_sign(bufnr, mark.extmark_id)
 	end
 
 	-- Clean up old annotation extmark if it exists
-	if bookmark.annotation_extmark_id then
-		display.hide_annotation(bufnr, bookmark.annotation_extmark_id)
+	if mark.annotation_extmark_id then
+		display.hide_annotation(bufnr, mark.annotation_extmark_id)
 	end
 
 	-- Create extmark for line tracking
-	local extmark_id = display.set_bookmark_mark(bufnr, bookmark)
+	local extmark_id = display.set_mark(bufnr, mark)
 	if not extmark_id then
 		return
 	end
 
-	bookmark.extmark_id = extmark_id
+	mark.extmark_id = extmark_id
 
 	-- Place sign
-	display.place_sign(bufnr, bookmark.line, extmark_id)
+	display.place_sign(bufnr, mark.line_start, extmark_id)
 
 	-- Show annotation if it exists and global visibility is enabled
-	if bookmark.note and annotations_visible then
-		local annotation_extmark_id = display.show_annotation(bufnr, bookmark.line, bookmark.note)
-		bookmark.annotation_extmark_id = annotation_extmark_id
+	if mark.note and annotations_visible then
+		local annotation_extmark_id = display.show_annotation(bufnr, mark.line_start, mark.note)
+		mark.annotation_extmark_id = annotation_extmark_id
 	end
 end
 
---- Restore bookmark visuals for a specific buffer.
+--- Restore mark visuals for a specific buffer.
 ---
 --- This is called automatically when buffers are opened. You typically
 --- don't need to call this manually.
 ---
----@param bufnr number Buffer number to restore bookmarks for
+---@param bufnr number Buffer number to restore marks for
 ---@param annotations_visible boolean Whether annotations should be displayed
 ---@return boolean success True if restoration succeeded or was skipped
-function M.restore_buffer_bookmarks(bufnr, annotations_visible)
+function M.restore_buffer_marks(bufnr, annotations_visible)
 	ensure_modules()
 	---@cast store -nil
 	---@cast display -nil
 
 	require("hunt")._ensure_initialized()
 
-	local valid, _ = utils.validate_buffer_for_bookmarks(bufnr)
+	local valid, _ = utils.validate_buffer_for_marks(bufnr)
 	if not valid then
 		return true
 	end
@@ -113,32 +113,32 @@ function M.restore_buffer_bookmarks(bufnr, annotations_visible)
 		return true
 	end
 
-	-- Find all bookmarks for this file
-	local all_bookmarks = store.get_all_raw()
-	local buffer_bookmarks = {}
-	for _, bookmark in ipairs(all_bookmarks) do
-		if bookmark.file == filepath then
-			table.insert(buffer_bookmarks, bookmark)
+	-- Find all marks for this file
+	local all_marks = store.get_all_raw()
+	local buffer_marks = {}
+	for _, mark in ipairs(all_marks) do
+		if mark.file == filepath then
+			table.insert(buffer_marks, mark)
 		end
 	end
 
-	-- early return for no bookmarks
-	if #buffer_bookmarks == 0 then
+	-- early return for no marks
+	if #buffer_marks == 0 then
 		return true
 	end
 
-	-- Restore visual elements for each bookmark
+	-- Restore visual elements for each mark
 	local success = true
-	for _, bookmark in ipairs(buffer_bookmarks) do
+	for _, mark in ipairs(buffer_marks) do
 		-- Use pcall to handle race conditions where buffer becomes invalid
-		local ok, err = pcall(restore_bookmark_display, bufnr, bookmark, annotations_visible)
+		local ok, err = pcall(restore_mark_display, bufnr, mark, annotations_visible)
 		if ok then
 			goto continue
 		end
 
 		-- Log at DEBUG level - this is expected in race conditions
 		vim.notify(
-			string.format("hunt.nvim: Failed to restore bookmark in %s: %s", bookmark.file, tostring(err)),
+			string.format("hunt.nvim: Failed to restore mark in %s: %s", mark.file, tostring(err)),
 			vim.log.levels.DEBUG
 		)
 		success = false
